@@ -61,7 +61,7 @@ import OpenAI from 'openai'
 //        `
 
 //需求1：
-const requirement1 = `当用户需要你生成或者修改代码时，用新增类的方式增加style（不要用行内样式和tailwindcss），并对这些类加上随机编码（唯一标识），让类不会重名。并且html部分用三个反引号包裹，并标注为html,css部分用三个反引号包裹，并标注为css`
+const requirement1 = `当用户需要你生成或者修改代码时，用新增类的方式增加style（不要用行内样式和tailwindcss），并必须在类名中包含随机编码（即类的唯一标识），让类不会重名。并且html部分用三个反引号包裹，并标注为html,css部分用三个反引号包裹，并标注为css`
 //需求2：
 const requirement2 = `当用户只是和你聊天，不需要你生成或者修改代码时，那就陪用户聊聊天，或者根据上下文，给用户一些建议。`
 
@@ -103,14 +103,13 @@ export const useQwenAI = () => {
         // response_format: {
         //   type: 'json_object',
         // },
+        stream: true,
+        stream_options: {
+          include_usage: true,
+        },
       })
-      const jsonString = completion.choices[0].message.content
-      // const jsonObject = JSON.parse(jsonString)
-      // if (jsonObject.style) {
-      //   jsonObject.style = jsonObject.style.replace(/\\n/g, '\n').replace(/\\"/g, '"')
-      // }
-      // messages.push({ role: 'assistant', content: jsonString })
-      return jsonString
+      // const jsonString = completion.choices[0].message.content
+      return completion
     } catch (error) {
       console.error('Error fetching response:', error)
       throw error // 重新抛出异常以便上层处理

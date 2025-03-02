@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, reactive } from 'vue'
+import { ref, watch, reactive, onUnmounted, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useOriginalCodeStore } from '@/stores'
@@ -16,6 +16,7 @@ const { setSelectedElement, setIframeEntrance, setIsRequireAIChange } = aiChatSt
 const { isRequireAIChange } = storeToRefs(aiChatStore)
 const myIframe = ref(null)
 const iframeWrapper = ref(null)
+const iframeObserver = ref(null) // 用于存储MutationObserver实例
 let lastHoverElement = null
 const isDragging = ref(false)
 const isAllowSelectElement = ref(false)
@@ -285,10 +286,27 @@ const handleElementLeave = (e) => {
 }
 //#endregion
 //监听srcdoc变化
-watch(originalCode, (newVal, oldVal) => {
-  console.log('Content changed:', newVal)
-  console.log('oldValue:', oldVal)
-})
+watch(
+  originalCode,
+  (newCode) => {
+    console.log('originalCode发生变化，将重新加载iframe')
+
+    // 如果iframe已经加载，则重新加载
+    if (myIframe.value) {
+      // 断开之前的MutationObserver
+      if (iframeObserver.value) {
+        iframeObserver.value.disconnect()
+      }
+
+      // 重新设置iframe的srcdoc，这将触发iframe的load事件
+      // 注意：这里使用nextTick确保Vue更新完DOM后再操作
+      nextTick(() => {
+        myIframe.value.srcdoc = newCode
+      })
+    }
+  },
+  { deep: true },
+)
 //#region 右键菜单 以及修改属性
 // 初始化右键菜单
 const initContextMenu = (iframeWindow, iframeDocument) => {
@@ -986,6 +1004,40 @@ const AIChange = () => {
 
 //只有在iframeload完毕之后才可对其进行操作
 
+// 处理iframe文档变化的函数
+const handleIframeDocumentChange = (mutations) => {
+  console.log('iframe文档发生变化:', mutations)
+
+  // 过滤出添加或删除节点的变化
+  const nodeChanges = mutations.filter(
+    (mutation) =>
+      mutation.type === 'childList' &&
+      (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0),
+  )
+
+  // 过滤出属性变化
+  const attributeChanges = mutations.filter((mutation) => mutation.type === 'attributes')
+
+  // 如果有节点添加或删除
+  if (nodeChanges.length > 0) {
+    console.log('DOM结构发生变化，节点添加或删除')
+    // 这里可以执行DOM结构变化后的逻辑
+    // 例如：重新初始化拖拽功能、更新组件树等
+  }
+
+  // 如果有属性变化
+  if (attributeChanges.length > 0) {
+    console.log('元素属性发生变化')
+    // 这里可以执行属性变化后的逻辑
+    // 例如：更新样式面板、同步状态等
+  }
+
+  // 如果需要，可以在这里触发Vue的响应式更新
+  // nextTick(() => {
+  //   // 更新UI或状态
+  // });
+}
+
 const iframeLoad = () => {
   const iframeWindow = myIframe.value.contentWindow
   const iframeDocument = myIframe.value.contentDocument
@@ -993,7 +1045,53 @@ const iframeLoad = () => {
 
   initHoverAndLeaveEffect(iframeDocument) // 调用 initHoverEffect 函数
   initContextMenu(iframeWindow, iframeDocument) //右键菜单
+
+  // 使用MutationObserver监听iframe文档变化
+  const observer = new MutationObserver(handleIframeDocumentChange)
+
+  // 配置观察选项
+  const config = {
+    attributes: true, // 监听属性变化
+    childList: true, // 监听子节点增删
+    subtree: true, // 监听所有后代节点
+    characterData: true, // 监听文本内容变化
+  }
+
+  // 开始观察目标节点
+  observer.observe(iframeDocument.body, config)
+
+  // 将observer保存到ref中，以便在组件卸载时断开连接
+  iframeObserver.value = observer
 }
+
+// 在组件卸载时断开MutationObserver连接
+onUnmounted(() => {
+  if (iframeObserver.value) {
+    iframeObserver.value.disconnect()
+    console.log('MutationObserver已断开连接')
+  }
+})
+
+// 手动重新加载iframe内容的方法
+const reloadIframe = () => {
+  console.log('手动重新加载iframe内容')
+
+  // 断开之前的MutationObserver
+  if (iframeObserver.value) {
+    iframeObserver.value.disconnect()
+  }
+
+  // 重新加载iframe
+  if (myIframe.value) {
+    // 可以选择使用当前的originalCode或其他内容
+    myIframe.value.srcdoc = originalCode.value
+  }
+}
+
+// 导出方法，以便其他组件可以调用
+defineExpose({
+  reloadIframe,
+})
 </script>
 <template>
   <div ref="iframeWrapper" class="iframe-wrapper">

@@ -8,7 +8,7 @@ import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 const aiChatStore = useAiChatStore()
 const { chatMsgs } = storeToRefs(aiChatStore)
-const { removeChatMsg, addChatMsg, setSelectedElement, setIsRequireAIChange } = aiChatStore
+const { addChatMsg, setSelectedElement, setIsRequireAIChange } = aiChatStore
 const { selectedElement, iframeEntrance } = storeToRefs(aiChatStore)
 const userInput = ref('')
 const sendBtn = ref(null)
@@ -51,7 +51,6 @@ watch(
   },
 )
 const sendMessage = async () => {
-  let parsedContent = ''
   let trueMessage = ''
 
   // 如果输入为空，不执行发送
@@ -84,30 +83,46 @@ const sendMessage = async () => {
       selectedElement: null,
       newElement: null,
     })
-    const loadingMsg = '牧濑正在思考...'
+
+    // 创建AI回复消息，初始为空，将通过流式更新
+    const aiMsgId = chatMsgs.value.length + 1
     addChatMsg({
-      id: 0,
-      message: loadingMsg,
-      content: trueMessage,
+      id: aiMsgId,
+      message: '', // 初始为空，将通过流式更新
+      content: '',
       role: 'assistant',
       selectedElement: null,
       newElement: null,
       type: 'chat',
     })
 
-    const res = await getResponse(trueMessage)
+    // 获取流式响应
+    const completion = await getResponse(trueMessage)
 
-    parsedContent = marked.parse(res)
+    // 用于累积完整响应的变量
+    let fullResponse = ''
 
-    // 已经在函数开始时清空了输入框，这里不需要再清空
-  } catch (error) {
-    console.log(error)
-    throw error
-  } finally {
-    //移除loadingMsg
-    removeChatMsg(0)
+    // 处理流式响应
+    for await (const chunk of completion) {
+      // 如果stream_options.include_usage为true，则最后一个chunk的choices字段为空数组，需要跳过
+      if (Array.isArray(chunk.choices) && chunk.choices.length > 0) {
+        const contentDelta = chunk.choices[0].delta.content || ''
+        fullResponse += contentDelta
+
+        // 更新UI上的消息内容 - 实时渲染markdown
+        const msgIndex = chatMsgs.value.findIndex((msg) => msg.id === aiMsgId)
+        if (msgIndex !== -1) {
+          chatMsgs.value[msgIndex].message = marked.parse(fullResponse)
+          chatMsgs.value[msgIndex].content = marked.parse(fullResponse)
+        }
+      }
+    }
+
+    // 解析AI响应中的HTML和CSS
+    const newElement = parseAIResponse(marked.parse(fullResponse))
+
+    // 确定消息类型
     let type
-    const newElement = parseAIResponse(parsedContent)
     if (selectedElement.value) {
       type = 'modify'
     } else if (newElement.html !== '') {
@@ -116,17 +131,15 @@ const sendMessage = async () => {
       type = 'chat'
     }
 
-    addChatMsg({
-      id: chatMsgs.value.length + 1,
-      message: parsedContent,
-      content: parsedContent,
-      role: 'assistant',
-      selectedElement: selectedElement.value,
-      newElement: newElement,
-      type: type,
-    })
+    // 更新最终消息类型和内容
+    const msgIndex = chatMsgs.value.findIndex((msg) => msg.id === aiMsgId)
+    if (msgIndex !== -1) {
+      chatMsgs.value[msgIndex].type = type
+      chatMsgs.value[msgIndex].newElement = newElement
+      chatMsgs.value[msgIndex].selectedElement = selectedElement.value
+    }
 
-    // 只对新添加的消息应用代码高亮，而不是所有消息
+    // 应用代码高亮
     nextTick(() => {
       const container = chatContainer.value
       if (container) {
@@ -149,8 +162,17 @@ const sendMessage = async () => {
         }
       }
     })
+  } catch (error) {
+    console.log(error)
+    throw error
+  } finally {
+    //启用发送按钮
+    if (sendBtn.value) {
+      sendBtn.value.disabled = false
+    }
   }
 }
+
 //提取回答中的组件代码
 function parseAIResponse(response) {
   const parser = new DOMParser()
@@ -166,8 +188,11 @@ function parseAIResponse(response) {
 
   return { html: htmlContent, css: cssContent }
 }
+
 const insertElement = (id) => {
   const msg = chatMsgs.value.find((item) => item.id === id)
+  if (!msg || !msg.selectedElement || !iframeEntrance.value) return
+
   console.log(msg.newElement)
   //先移除选中元素的特殊高亮
   msg.selectedElement.classList.remove('special-hover-highlight')
@@ -176,12 +201,15 @@ const insertElement = (id) => {
   //插入元素
   msg.selectedElement.outerHTML = msg.newElement.html
   //插入css
-  const styleTag = iframeEntrance.value.createElement('style')
-  styleTag.textContent = msg.newElement.css
-  iframeEntrance.value.head.appendChild(styleTag)
+  if (iframeEntrance.value && iframeEntrance.value.head) {
+    const styleTag = iframeEntrance.value.createElement('style')
+    styleTag.textContent = msg.newElement.css
+    iframeEntrance.value.head.appendChild(styleTag)
+  }
   //清空选中元素
   setSelectedElement(null)
 }
+
 onMounted(() => {
   hljs.highlightAll()
 })
