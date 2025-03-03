@@ -5,5 +5,5 @@ pinia.use(persist)
 export default pinia
 export * from './aiChat'
 export * from './componentArea'
-
 export * from './originalCode'
+export * from './user'

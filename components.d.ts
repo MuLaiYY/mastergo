@@ -18,5 +18,6 @@ declare module 'vue' {
     QwenAI: typeof import('./src/components/ai/qwenAI.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TailwindTest: typeof import('./src/components/TailwindTest.vue')['default']
   }
 }
