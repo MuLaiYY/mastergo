@@ -10,10 +10,35 @@ const router = createRouter({
       component: ()=>import('@/views/homeView.vue'),
       meta: { requiresAuth: true }
     },
+
     {
-      path:'/demo',
-      name:'demo',
-      component:()=>import('@/views/demoView.vue'),
+      path: '/new-project',
+      name: 'new-project',
+      component: () => import('@/views/newProjectView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/projects',
+      name: 'projects',
+      component: () => import('@/views/projectsView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/project/:id',
+      name: 'project-detail',
+      component: () => import('@/views/projectDetailView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/project/:projectId/page/:pageId',
+      name: 'page-design',
+      component: () => import('@/views/pageDesignView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/preview/:pageId',
+      name: 'page-preview',
+      component: () => import('@/views/pagePreviewView.vue'),
       meta: { requiresAuth: true }
     },
     {

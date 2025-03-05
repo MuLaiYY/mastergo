@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, reactive, onUnmounted, nextTick } from 'vue'
+import { ref, watch, reactive, onUnmounted, nextTick, defineProps } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useOriginalCodeStore } from '@/stores'
@@ -110,6 +110,13 @@ const isRotate = ref(false)
 const isScale = ref(false)
 const isDrag = ref(false)
 let sortableInstances = [] // 存储所有 Sortable 实例
+
+const props = defineProps({
+  page: {
+    type: Object,
+    required: true
+  }
+})
 
 //#region 元素信息展示模块
 
@@ -1072,19 +1079,35 @@ onUnmounted(() => {
   }
 })
 
+// 监听页面内容变化，更新iframe内容
+watch(() => props.page, (newPage) => {
+  if (newPage) {
+    console.log('页面内容已更新，正在更新iframe...');
+    // 优先使用htmlContent，如果没有则使用content
+    const content = newPage.htmlContent || newPage.content || '';
+    originalCodeStore.changeOriginalCode(content);
+
+    // 如果iframe已经加载，则手动重新加载
+    if (myIframe.value) {
+      reloadIframe();
+    }
+  }
+}, { deep: true });
+
 // 手动重新加载iframe内容的方法
 const reloadIframe = () => {
-  console.log('手动重新加载iframe内容')
+  console.log('手动重新加载iframe内容');
 
   // 断开之前的MutationObserver
   if (iframeObserver.value) {
-    iframeObserver.value.disconnect()
+    iframeObserver.value.disconnect();
   }
 
   // 重新加载iframe
   if (myIframe.value) {
-    // 可以选择使用当前的originalCode或其他内容
-    myIframe.value.srcdoc = originalCode.value
+    // 优先使用页面的htmlContent，如果没有则使用content，最后才使用originalCode
+    const content = props.page?.htmlContent || props.page?.content || originalCode.value;
+    myIframe.value.srcdoc = content;
   }
 }
 
@@ -1095,7 +1118,7 @@ defineExpose({
 </script>
 <template>
   <div ref="iframeWrapper" class="iframe-wrapper">
-    <iframe @load="iframeLoad" ref="myIframe" :srcdoc="originalCode" frameborder="0"></iframe>
+    <iframe @load="iframeLoad" ref="myIframe" :srcdoc="props.page?.htmlContent || props.page?.content || originalCode" frameborder="0"></iframe>
     <!-- 右键菜单 -->
     <div
       v-if="contextMenu.visible"

@@ -1,7 +1,7 @@
 <script setup>
 import CodeMirror from 'codemirror'
 
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, defineProps, defineEmits, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 // 引入css文件
 import 'codemirror/lib/codemirror.css'
@@ -13,6 +13,16 @@ import 'codemirror/mode/htmlmixed/htmlmixed'
 // import "codemirror/addon/display/placeholder.js";
 // 引入主题 可以从 codemirror/theme/ 下引入多个
 import 'codemirror/theme/idea.css'
+import { ElMessage } from 'element-plus'
+
+const props = defineProps({
+  page: {
+    type: Object,
+    required: true
+  }
+})
+
+const emit = defineEmits(['update:content'])
 
 const editor = ref(null) // 绑定到模板中的 DOM 元素
 let editorInstance = null // 存储 CodeMirror 实例
@@ -38,13 +48,41 @@ const { originalCode } = storeToRefs(originalCodeStore)
 
 //编辑器修改代码函数
 const newContentCode = ref()
+const isUpdating = ref(false)
 
-const saveCode = () => {
-  originalCodeStore.changeOriginalCode(newContentCode.value)
+const saveCode = async () => {
+  isUpdating.value = true
+  try {
+    // 更新本地预览
+    originalCodeStore.changeOriginalCode(newContentCode.value)
+
+    // 同时更新页面内容（用于常规保存和预览）
+    emit('update:content', newContentCode.value)
+
+    // 确保页面对象的content字段也被更新
+    if (props.page) {
+      props.page.content = newContentCode.value
+      // 如果htmlContent存在，也同步更新
+      if (props.page.htmlContent !== undefined) {
+        props.page.htmlContent = newContentCode.value
+      }
+    }
+
+    ElMessage.success('预览已更新')
+  } catch (error) {
+    console.error('更新预览失败:', error)
+    ElMessage.error('更新预览失败，请重试')
+  } finally {
+    isUpdating.value = false
+  }
 }
+
 onMounted(() => {
+  // 初始化编辑器内容
+  const initialContent = props.page?.content || originalCode.value || ''
+
   editorInstance = CodeMirror(editor.value, {
-    value: originalCode.value, // 初始内容
+    value: initialContent, // 初始内容
     mode: 'htmlmixed', // 语言模式
     theme: 'default', // 主题（可选）
     lineNumbers: true, // 显示行号
@@ -57,11 +95,28 @@ onMounted(() => {
   editorInstance.on('change', (instance) => {
     newContentCode.value = instance.getValue()
   })
+
+  // 确保初始值设置
+  newContentCode.value = initialContent
 })
+
+// 监听页面内容变化，更新编辑器内容
+watch(() => props.page, (newPage, oldPage) => {
+  if (newPage && editorInstance) {
+    // 如果页面内容发生变化，更新编辑器内容
+    if (newPage.content !== editorInstance.getValue()) {
+      console.log('页面内容已更新，正在更新编辑器...');
+      editorInstance.setValue(newPage.content || '');
+      newContentCode.value = newPage.content || '';
+    }
+  }
+}, { deep: true });
 </script>
 <template>
   <div ref="editor" class="editor">
-    <button @click="saveCode">保存</button>
+    <button @click="saveCode" :disabled="isUpdating">
+      {{ isUpdating ? '更新中...' : '更新预览' }}
+    </button>
   </div>
 </template>
 <style scoped lang="less">
@@ -86,5 +141,10 @@ button {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+
+  &:disabled {
+    background: #a8d5c2;
+    cursor: not-allowed;
+  }
 }
 </style>

@@ -61,10 +61,11 @@ import OpenAI from 'openai'
 //        `
 
 //需求1：
-const requirement1 = `当用户需要你生成或者修改代码时，用新增类的方式增加style（不要用行内样式和tailwindcss），并必须在类名中包含随机编码（即类的唯一标识），让类不会重名。并且html部分用三个反引号包裹，并标注为html,css部分用三个反引号包裹，并标注为css`
+const requirement1 = `当用户需要你生成或者修改组件时，用新增类或者tailwindcss的方式增加style，并必须在类名中包含随机编码（即类的唯一标识），让类不会重名。并且html部分用三个反引号包裹，并标注为html,css部分用三个反引号包裹，并标注为css`
 //需求2：
 const requirement2 = `当用户只是和你聊天，不需要你生成或者修改代码时，那就陪用户聊聊天，或者根据上下文，给用户一些建议。`
-
+//需求3：
+const requirement3 = `当用户需要你生成页面时，用html,css,js的方式生成页面，css必须用tailwindcss或者增加类名的方式增加style，并必须在类名中包含随机编码（即类的唯一标识），让类不会重名。并分成三个部分展示：html部分、用三个反引号包裹，并标注为html,css部分用三个反引号包裹，并标注为css，js部分用三个反引号包裹，并标注为js`
 export const useQwenAI = () => {
   const apiKey = import.meta.env.VITE_QWEN_API_KEY
   const openai = new OpenAI({
@@ -79,7 +80,7 @@ export const useQwenAI = () => {
       content: `你是动态界面交互系统的设计助手牧濑，你需要解决他们使用该系统设计页面时的问题，也可以和他们交流互动。
       要求1：${requirement1}。
       要求2：${requirement2}。
-
+      要求3：${requirement3}。
         `,
     },
   ]
@@ -95,7 +96,7 @@ export const useQwenAI = () => {
             content: `你是动态界面交互系统的设计助手牧濑，你需要解决他们使用该系统设计页面时的问题，也可以和他们交流互动。
             要求1：${requirement1}。
             要求2：${requirement2}。
-
+            要求3：${requirement3}。
               `,
           },
           { role: 'user', content: message },
