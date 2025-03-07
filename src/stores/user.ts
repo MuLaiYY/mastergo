@@ -120,18 +120,40 @@ export const useUserStore = defineStore('mastergo-user', {
       const token = getStoredToken();
 
       if (!token) {
+        console.log('没有找到token，用户未登录');
         this.logout();
         return false;
       }
 
       try {
+        console.log('开始验证token');
         const isValid = await authApi.verifyToken(token);
+
         if (!isValid) {
+          console.log('token验证失败，执行登出');
           this.logout();
           return false;
         }
+
+        // 如果token有效但用户数据为空，尝试获取用户信息
+        if (!this.user) {
+          try {
+            // 这里可以添加获取用户信息的API调用
+            // const userData = await authApi.getUserInfo();
+            // this.user = userData;
+
+            // 由于没有现成的getUserInfo API，我们至少设置认证状态
+            this.isAuthenticated = true;
+          } catch (userError) {
+            console.error('获取用户信息失败:', userError);
+            // 即使获取用户信息失败，只要token有效，我们仍然认为用户已登录
+          }
+        }
+
+        console.log('token验证成功，用户已登录');
         return true;
       } catch (error) {
+        console.error('验证token时出错:', error);
         this.logout();
         return false;
       }

@@ -47,7 +47,15 @@ http.interceptors.response.use(
           ElMessage.error('登录已过期，请重新登录');
           // 清除token并跳转到登录页
           localStorage.removeItem('token');
-          window.location.href = '/login';
+          // 清除所有用户相关的存储
+          localStorage.removeItem('mastergo-user-storage');
+
+          // 获取当前路径，用于登录后重定向
+          const currentPath = window.location.pathname;
+          const redirectParam = currentPath !== '/login' ? `?redirect=${encodeURIComponent(currentPath)}` : '';
+
+          // 使用replace而不是href，避免在历史记录中保留未授权的页面
+          window.location.replace(`/login${redirectParam}`);
           break;
         case 403:
           ElMessage.error('没有权限访问该资源');

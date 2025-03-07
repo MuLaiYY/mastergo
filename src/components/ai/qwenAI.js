@@ -1,71 +1,64 @@
 import OpenAI from 'openai'
 
-// 预定义示例响应
-// const example1Response = JSON.stringify({
-//   html: `<div class="bg-white p-8 rounded-lg shadow-sm a1b2c3-rotate-animation">
-//           <div class="w-full h-48 mb-6 rounded-lg overflow-hidden a1b2c3-hover-zoom">
-//           <img src="https://ai-public.mastergo.com/ai/img_res/ecf357dc7c8b41cd97524d5ee8a782b9.jpg" class="w-full h-full object-cover transition-transform duration-300 transform hover:scale-110" alt="展览特色">
-//         </div>
-//         <h3 class="text-xl font-bold mb-4 a1b2c3-hover-scale">国际艺术大师云集</h3>
-//         <p class="text-gray-600 a1b2c3-hover-scale">汇聚来自 30 多个国家的 150 位知名艺术家，展出 300 余件当代艺术精品。</p>
-//         </div>`,
-//   style: `.a1b2c3-rotate-animation {
-//         animation: rotateAnimation 2s ease-in-out;
-//         }
-//         @keyframes rotateAnimation {
-//             0% {
-//                 transform: rotateY(30deg);
-//                 opacity: 0;
-//             }
-//             100% {
-//                 transform: rotateY(0deg);
-//                 opacity: 1;
-//             }
-//         }
-//         .a1b2c3-hover-zoom img {
-//             transition: transform 0.3s ease-in-out;
-//         }
-//         .a1b2c3-hover-zoom:hover img {
-//             transform: scale(1.1);
-//         }
-//         .a1b2c3-hover-scale {
-//             transition: transform 0.3s ease-in-out;
-//         }
-//         .a1b2c3-hover-scale:hover {
-//             transform: scale(1.05);
-//         }`,
-//   text: '用户你好，组件已经更新完成',
-// })
-// const skill1 = `根据用户的需求生成或者修改对应的组件代码,若你添加了新的css类，请对这些类加上随机编码（唯一标识），让类不会重名。
-//         且只需要代码，不要输出任何注释。不需要任何转义。
-//         并提取出修改或生成后的组件的样式（style）和结构（html），输出包含html层和style层的JSON。
-//         示例：
-//         Q：<div class="bg-white p-8 rounded-lg shadow-sm">
-//             <div class="w-full h-48 mb-6 rounded-lg overflow-hidden">
-//             <img src="https://ai-public.mastergo.com/ai/img_res/ecf357dc7c8b41cd97524d5ee8a782b9.jpg" class="w-full h-full object-cover" alt="展览特色">
-//             </div>
-//             <h3 class="text-xl font-bold mb-4">国际艺术大师云集</h3>
-//             <p class="text-gray-600">汇聚来自 30 多个国家的 150 位知名艺术家，展出 300 余件当代艺术精品。</p>
-//             </div>
-//             对这个组件进行美化，加一些动态效果，比如旋转，然后鼠标悬停在图片和文字上有放大效果。
-//         A：${example1Response}`
+const example = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 引入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-// const example2Response = JSON.stringify({
-//   text: '用户你好，很高兴认识你',
-// })
+  <!-- 动态配置 Tailwind -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: 'var(--color-primary)', // 使用 CSS 变量
+            secondary: 'var(--color-secondary)',
+            //其他可能的颜色变量
+          },
+          borderRadius: {
+            button: 'var(--border-radius-button)', // 使用 CSS 变量
+          },
+          //其他可能的配置
+        },
+      },
+    };
+  </script>
 
-// const skill2 = `当用户没有页面设计方面的要求，可以陪用户聊聊天，或者根据上下文，给用户一些建议。
-//         示例1：
-//         Q：牧濑你好
-//         A：${example2Response}
-//        `
+  <!-- 定义全局 CSS 变量 -->
+  <style>
+      --color-primary: red; /* 可能的初始主色 */
+      --color-secondary: blue; /* 可能的初始次色 */
+      --border-radius-button: 10px; /* 可能的初始按钮圆角 */
+      /*其他可能的css变量*/
+      /*其他可能的类*/
+    }
+  </style>
+  <!-- 其他可能的style标签-->
+  <style>
+    /*可能的样式*/
+  </style>
+</head>
+<body>
+  <!-- 可能的html结构 -->
+  <script>
+    //可能的js代码
+  </script>
+</body>
+</html>`
 
-//需求1：
-const requirement1 = `当用户需要你生成或者修改组件时，用新增类或者tailwindcss的方式增加style，并必须在类名中包含随机编码（即类的唯一标识），让类不会重名。并且html部分用三个反引号包裹，并标注为html,css部分用三个反引号包裹，并标注为css`
+
+const requirement1 = `当用户需要你生成组件、或者修改组件（例如用户说"添加如下效果"、"修改样式"、"添加点击事件"等包含"添加"、"修改"、"添加效果"、"修改样式"、"添加事件"等关键词的请求）时，执行如下要求：必须使用tailwindcss，若需要增加新的样式类，则必须在类名中包含随机编码（即类的唯一标识），让类不会重名。并且html部分用三个反引号包裹，并标注为html;如果新增了类，则用三个反引号包裹，并标注为css;如果新增了js代码，则用三个反引号包裹，并标注为js`
 //需求2：
 const requirement2 = `当用户只是和你聊天，不需要你生成或者修改代码时，那就陪用户聊聊天，或者根据上下文，给用户一些建议。`
 //需求3：
-const requirement3 = `当用户需要你生成页面时，用html,css,js的方式生成页面，css必须用tailwindcss或者增加类名的方式增加style，并必须在类名中包含随机编码（即类的唯一标识），让类不会重名。并分成三个部分展示：html部分、用三个反引号包裹，并标注为html,css部分用三个反引号包裹，并标注为css，js部分用三个反引号包裹，并标注为js`
+const requirement3 = `当用户需要你生成页面或网站时（例如用户说"生成一个网站"、"制作一个网页"、"创建一个在线教育网站"、"设计一个电商首页"等包含"网站"、"网页"、"首页"、"页面"等关键词的请求），执行如下要求：用html,css,js的方式生成完整的HTML文档结构，包涵<!DOCTYPE html>、<html>、<head>和<body>。css必须用tailwindcss，且需要用tailwind.config结合css变量来配置主题，以便用户后续修改，若需要增加新的样式类，则必须在类名中包含随机编码（即类的唯一标识），让类不会重名。全部代码用三个反引号包裹，并标注为html,所有的style标签写在<head>里，script标签写在<body>结束前。下面是一个返回示例：${example}，这只是示例代码，请根据用户的需求，生成符合要求的html代码。`
+
+
+
+
 export const useQwenAI = () => {
   const apiKey = import.meta.env.VITE_QWEN_API_KEY
   const openai = new OpenAI({
@@ -81,6 +74,7 @@ export const useQwenAI = () => {
       要求1：${requirement1}。
       要求2：${requirement2}。
       要求3：${requirement3}。
+
         `,
     },
   ]

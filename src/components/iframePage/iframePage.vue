@@ -124,7 +124,7 @@ const initHoverAndLeaveEffect = (iframeDocument) => {
   console.log('iframe重新加载了')
   console.log(myIframe.value.contentDocument)
 
-  //禁止所有a标签跳转
+  //禁止#号跳转
   const aTags = iframeDocument.querySelectorAll('a')
   aTags.forEach((aTag) => {
     aTag.addEventListener('click', (event) => {
@@ -232,6 +232,7 @@ const changeAllowSelect = () => {
 }
 //处理悬停
 const handleElementHover = (e) => {
+
   if (
     !isAllowSelectElement.value ||
     isRotate.value ||
@@ -243,7 +244,7 @@ const handleElementHover = (e) => {
   )
     return // 菜单显示时、修改属性时不更新高亮
 
-  // console.log('鼠标进来了：', e.target)
+  console.log('鼠标进来了：', e.target)
   let target
   //排除html标签
   if (e.target.tagName !== 'HTML' && e.target.tagName !== 'BODY') target = e.target
@@ -298,15 +299,7 @@ watch(
   (newCode) => {
     console.log('originalCode发生变化，将重新加载iframe')
 
-    // 如果iframe已经加载，则重新加载
     if (myIframe.value) {
-      // 断开之前的MutationObserver
-      if (iframeObserver.value) {
-        iframeObserver.value.disconnect()
-      }
-
-      // 重新设置iframe的srcdoc，这将触发iframe的load事件
-      // 注意：这里使用nextTick确保Vue更新完DOM后再操作
       nextTick(() => {
         myIframe.value.srcdoc = newCode
       })
@@ -1003,6 +996,7 @@ const exportCode = () => {
 const AIChange = () => {
   setIsRequireAIChange(!isRequireAIChange.value)
   if (isRequireAIChange.value) {
+
     setSelectedElement(lastHoverElement)
   } else {
     setSelectedElement(null)
@@ -1011,109 +1005,19 @@ const AIChange = () => {
 
 //只有在iframeload完毕之后才可对其进行操作
 
-// 处理iframe文档变化的函数
-const handleIframeDocumentChange = (mutations) => {
-  console.log('iframe文档发生变化:', mutations)
-
-  // 过滤出添加或删除节点的变化
-  const nodeChanges = mutations.filter(
-    (mutation) =>
-      mutation.type === 'childList' &&
-      (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0),
-  )
-
-  // 过滤出属性变化
-  const attributeChanges = mutations.filter((mutation) => mutation.type === 'attributes')
-
-  // 如果有节点添加或删除
-  if (nodeChanges.length > 0) {
-    console.log('DOM结构发生变化，节点添加或删除')
-    // 这里可以执行DOM结构变化后的逻辑
-    // 例如：重新初始化拖拽功能、更新组件树等
-  }
-
-  // 如果有属性变化
-  if (attributeChanges.length > 0) {
-    console.log('元素属性发生变化')
-    // 这里可以执行属性变化后的逻辑
-    // 例如：更新样式面板、同步状态等
-  }
-
-  // 如果需要，可以在这里触发Vue的响应式更新
-  // nextTick(() => {
-  //   // 更新UI或状态
-  // });
-}
-
+// 简化iframeLoad函数，移除重复的监听
 const iframeLoad = () => {
   const iframeWindow = myIframe.value.contentWindow
   const iframeDocument = myIframe.value.contentDocument
   setIframeEntrance(iframeDocument)
 
-  initHoverAndLeaveEffect(iframeDocument) // 调用 initHoverEffect 函数
-  initContextMenu(iframeWindow, iframeDocument) //右键菜单
-
-  // 使用MutationObserver监听iframe文档变化
-  const observer = new MutationObserver(handleIframeDocumentChange)
-
-  // 配置观察选项
-  const config = {
-    attributes: true, // 监听属性变化
-    childList: true, // 监听子节点增删
-    subtree: true, // 监听所有后代节点
-    characterData: true, // 监听文本内容变化
-  }
-
-  // 开始观察目标节点
-  observer.observe(iframeDocument.body, config)
-
-  // 将observer保存到ref中，以便在组件卸载时断开连接
-  iframeObserver.value = observer
-}
-
-// 在组件卸载时断开MutationObserver连接
-onUnmounted(() => {
-  if (iframeObserver.value) {
-    iframeObserver.value.disconnect()
-    console.log('MutationObserver已断开连接')
-  }
-})
-
-// 监听页面内容变化，更新iframe内容
-watch(() => props.page, (newPage) => {
-  if (newPage) {
-    console.log('页面内容已更新，正在更新iframe...');
-    // 优先使用htmlContent，如果没有则使用content
-    const content = newPage.htmlContent || newPage.content || '';
-    originalCodeStore.changeOriginalCode(content);
-
-    // 如果iframe已经加载，则手动重新加载
-    if (myIframe.value) {
-      reloadIframe();
-    }
-  }
-}, { deep: true });
-
-// 手动重新加载iframe内容的方法
-const reloadIframe = () => {
-  console.log('手动重新加载iframe内容');
-
-  // 断开之前的MutationObserver
-  if (iframeObserver.value) {
-    iframeObserver.value.disconnect();
-  }
-
-  // 重新加载iframe
-  if (myIframe.value) {
-    // 优先使用页面的htmlContent，如果没有则使用content，最后才使用originalCode
-    const content = props.page?.htmlContent || props.page?.content || originalCode.value;
-    myIframe.value.srcdoc = content;
-  }
+  initHoverAndLeaveEffect(iframeDocument)
+  initContextMenu(iframeWindow, iframeDocument)
 }
 
 // 导出方法，以便其他组件可以调用
 defineExpose({
-  reloadIframe,
+
 })
 </script>
 <template>

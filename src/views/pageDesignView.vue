@@ -37,11 +37,11 @@
         <div class="editor-tabs">
           <button
             class="tab-button"
-            :class="{ 'active': activeTab === 'code' }"
-            @click="activeTab = 'code'"
+            :class="{ 'active': activeTab === 'chat' }"
+            @click="activeTab = 'chat'"
           >
-            <code-icon class="tab-icon" />
-            <span>代码</span>
+            <message-square-icon class="tab-icon" />
+            <span>AI助手</span>
           </button>
           <button
             class="tab-button"
@@ -51,13 +51,14 @@
             <layout-icon class="tab-icon" />
             <span>组件</span>
           </button>
+
           <button
             class="tab-button"
-            :class="{ 'active': activeTab === 'chat' }"
-            @click="activeTab = 'chat'"
+            :class="{ 'active': activeTab === 'code' }"
+            @click="activeTab = 'code'"
           >
-            <message-square-icon class="tab-icon" />
-            <span>AI助手</span>
+            <code-icon class="tab-icon" />
+            <span>代码</span>
           </button>
         </div>
 
@@ -116,7 +117,7 @@ const isLoading = ref(true);
 const isSaving = ref(false);
 
 // 编辑器选项卡
-const activeTab = ref('code');
+const activeTab = ref('chat');
 
 // 加载页面数据
 const loadPage = async () => {
@@ -154,7 +155,12 @@ const loadPage = async () => {
 // 更新页面内容
 const updatePageContent = (content: string) => {
   if (page.value) {
+    // 更新页面内容
     page.value.content = content;
+    page.value.htmlContent = content;
+
+    // 更新预览
+    originalCodeStore.changeOriginalCode(content);
   }
 };
 

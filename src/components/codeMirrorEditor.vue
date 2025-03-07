@@ -31,20 +31,7 @@ import { useOriginalCodeStore } from '@/stores/originalCode'
 const originalCodeStore = useOriginalCodeStore()
 const { originalCode } = storeToRefs(originalCodeStore)
 
-//防抖函数
-// function debounce(func, delay) {
-//   let timeoutId
 
-//   return function (...args) {
-//     // 每次触发事件时，清除之前的定时器
-//     clearTimeout(timeoutId)
-
-//     // 设置新的定时器，延迟执行
-//     timeoutId = setTimeout(() => {
-//       func.apply(this, args)
-//     }, delay)
-//   }
-// }
 
 //编辑器修改代码函数
 const newContentCode = ref()
@@ -53,25 +40,13 @@ const isUpdating = ref(false)
 const saveCode = async () => {
   isUpdating.value = true
   try {
-    // 更新本地预览
-    originalCodeStore.changeOriginalCode(newContentCode.value)
-
-    // 同时更新页面内容（用于常规保存和预览）
+    // 更新页面内容
     emit('update:content', newContentCode.value)
 
-    // 确保页面对象的content字段也被更新
-    if (props.page) {
-      props.page.content = newContentCode.value
-      // 如果htmlContent存在，也同步更新
-      if (props.page.htmlContent !== undefined) {
-        props.page.htmlContent = newContentCode.value
-      }
-    }
-
-    ElMessage.success('预览已更新')
+    ElMessage.success('代码已更新')
   } catch (error) {
-    console.error('更新预览失败:', error)
-    ElMessage.error('更新预览失败，请重试')
+    console.error('更新代码失败:', error)
+    ElMessage.error('更新失败，请重试')
   } finally {
     isUpdating.value = false
   }
