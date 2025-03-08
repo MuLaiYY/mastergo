@@ -1,12 +1,13 @@
 <script setup>
 import { marked } from 'marked'
-import { ref, watch, nextTick, onMounted, defineProps } from 'vue'
+import { ref, watch, nextTick, onMounted, defineProps, defineEmits, computed } from 'vue'
 import { useQwenAI } from './qwenAI'
 import { useAiChatStore } from '@/stores'
 import { storeToRefs } from 'pinia'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
-import { useOriginalCodeStore } from '@/stores/originalCode'
+import { getPageById } from '@/api/page'
+import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   page: {
@@ -15,9 +16,13 @@ const props = defineProps({
   }
 })
 
+// 添加emit定义
+const emit = defineEmits(['update:content'])
+
 const aiChatStore = useAiChatStore()
-const { chatMsgs } = storeToRefs(aiChatStore)
-const { addChatMsg, setSelectedElement, setIsRequireAIChange } = aiChatStore
+// 使用获取当前页面聊天记录的函数
+const chatMsgs = computed(() => aiChatStore.getCurrentPageChatMsgs())
+const { addChatMsg, setSelectedElement, setIsRequireAIChange, setCurrentPageId } = aiChatStore
 const { selectedElement, iframeEntrance } = storeToRefs(aiChatStore)
 const userInput = ref('')
 const sendBtn = ref(null)
@@ -25,7 +30,6 @@ const chatContainer = ref(null)
 const isInputEmpty = ref(true) // 新增：跟踪输入是否为空
 const { getResponse } = useQwenAI()
 const isEnlarged = ref(false) // 跟踪输入框是否放大
-const originalCodeStore = useOriginalCodeStore()
 
 // 新增：存储代码块折叠状态
 const codeFoldStates = ref({})
@@ -63,6 +67,12 @@ const handleInput = (event) => {
 
 onMounted(() => {
   scrollToBottom()
+
+  // 设置当前页面ID
+  if (props.page && props.page._id) {
+    setCurrentPageId(props.page._id)
+  }
+
   // 添加输入事件监听
   const textarea = document.getElementById('user-input')
   if (textarea) {
@@ -113,17 +123,20 @@ const sendMessage = async () => {
     //禁用发送按钮
     sendBtn.value.disabled = true
 
+    // 添加用户消息到UI
+    const userMsgId = Date.now()
     addChatMsg({
-      id: chatMsgs.value.length + 1,
+      id: userMsgId,
       message: currentInput,
       content: trueMessage,
       role: 'user',
       selectedElement: null,
       newElement: null,
+      type: 'chat',
     })
 
     // 创建AI回复消息，初始为空，将通过流式更新
-    const aiMsgId = chatMsgs.value.length + 1
+    const aiMsgId = Date.now() + 1
     addChatMsg({
       id: aiMsgId,
       message: '', // 初始为空，将通过流式更新
@@ -133,6 +146,14 @@ const sendMessage = async () => {
       newElement: null,
       type: 'chat',
     })
+
+    // 尝试使用API发送消息
+    try {
+      // 只发送用户消息，先不创建AI回复
+      await aiChatStore.sendMessageToApi(trueMessage, true) // 添加参数表示只发送用户消息
+    } catch (error) {
+      console.error('通过API发送消息失败，使用本地模型:', error)
+    }
 
     // 获取流式响应
     const completion = await getResponse(trueMessage)
@@ -189,13 +210,22 @@ const sendMessage = async () => {
     }
 
     // 更新最终消息类型和内容
-    const msgIndex = chatMsgs.value.findIndex((msg) => msg.id === aiMsgId)
+
+    const msgIndex = chatMsgs.value.findIndex((msg) => msg.id === aiMsgId)//
     if (msgIndex !== -1) {
       chatMsgs.value[msgIndex].type = type
       chatMsgs.value[msgIndex].newElement = newElement
       chatMsgs.value[msgIndex].selectedElement = selectedElement.value
     }
 
+    // 将完整的AI回复发送到后端存储
+    try {
+      await aiChatStore.saveAiResponse(fullResponse, type, newElement)
+      console.log('AI回复已保存到数据库')
+    } catch (error) {
+      console.error('保存AI回复到数据库失败:', error)
+    }
+    renderGeneratedPage(chatMsgs.value[msgIndex].id)
     // 应用代码高亮
     nextTick(() => {
       const container = chatContainer.value
@@ -368,19 +398,24 @@ const renderGeneratedPage = (id) => {
     // 使用工具函数构建完整的HTML文档
     const fullHtmlContent = msg.newElement.html
 
-    // 更新originalCode存储，这样CodeMirror编辑器能获取到完整内容
-    originalCodeStore.changeOriginalCode(fullHtmlContent)
-
     // 如果在页面设计视图中，更新页面内容
     if (props.page) {
-      props.page.content = fullHtmlContent
-      props.page.htmlContent = fullHtmlContent
+      // 使用emit事件通知父组件更新内容
+      emit('update:content', fullHtmlContent)
     }
 
-    // 使用srcdoc属性更新iframe内容
-    if (iframeEntrance.value) {
-      iframeEntrance.value.srcdoc = fullHtmlContent
-    }
+    // // 使用srcdoc属性更新iframe内容
+    // if (iframeEntrance.value) {
+    //   iframeEntrance.value.srcdoc = fullHtmlContent
+    // }
+
+    // 提示用户保存操作，使用更显眼的提示
+    ElMessage({
+      message: '页面内容已更新，请点击右上角"保存"按钮永久保存更改，否则退出后将丢失！',
+      type: 'warning',
+      duration: 8000, // 显示更长时间
+      showClose: true // 允许手动关闭
+    })
 
     console.log('页面渲染成功，并已更新编辑器内容')
   } catch (error) {
@@ -388,29 +423,29 @@ const renderGeneratedPage = (id) => {
   }
 }
 
-// 监听消息类型变化，自动渲染生成的页面
-watch(
-  chatMsgs,
-  (newMsgs, oldMsgs) => {
-    // 检查是否有新的消息被添加或消息类型被更新
-    if (newMsgs.length > 0) {
-      const latestMsg = newMsgs[newMsgs.length - 1]
+// // 监听消息类型变化，自动渲染生成的页面
+// watch(
+//   chatMsgs,
+//   (newMsgs, oldMsgs) => {
+//     // 检查是否有新的消息被添加或消息类型被更新
+//     if (newMsgs.length > 0) {
+//       const latestMsg = newMsgs[newMsgs.length - 1]
 
-      // 如果最新消息是AI助手的回复，且类型是generate_page，自动渲染
-      if (latestMsg.role === 'assistant' && latestMsg.type === 'generate_page' && latestMsg.newElement?.html) {
-        // 确保消息已经完全接收（通过检查newElement是否存在）
-        if (latestMsg.newElement) {
-          console.log('检测到页面生成请求，准备自动渲染')
-          // 使用nextTick确保DOM已更新
-          nextTick(() => {
-            renderGeneratedPage(latestMsg.id)
-          })
-        }
-      }
-    }
-  },
-  { deep: true }
-)
+//       // 如果最新消息是AI助手的回复，且类型是generate_page，自动渲染
+//       if (latestMsg.role === 'assistant' && latestMsg.type === 'generate_page' && latestMsg.newElement?.html) {
+//         // 确保消息已经完全接收（通过检查newElement是否存在）
+//         if (latestMsg.newElement) {
+//           console.log('检测到页面生成请求，准备自动渲染')
+//           // 使用nextTick确保DOM已更新
+//           nextTick(() => {
+//             renderGeneratedPage(latestMsg.id)
+//           })
+//         }
+//       }
+//     }
+//   },
+//   { deep: true }
+// )
 
 onMounted(() => {
   hljs.highlightAll()

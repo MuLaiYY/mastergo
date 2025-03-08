@@ -27,7 +27,7 @@
       <div class="preview-area">
         <iframe-page
           :page="page"
-          :key="'iframe-' + pageId"
+
         />
       </div>
 
@@ -93,8 +93,8 @@ import {
 import { getPageById, updatePage, savePageHtml } from '@/api/page';
 import type { Page, UpdatePageData } from '@/api/page';
 
-// 导入存储
-import { useOriginalCodeStore } from '@/stores';
+// 导入AI聊天Store
+import { useAiChatStore } from '@/stores';
 
 // 导入四个核心组件
 import IframePage from '@/components/iframePage/iframePage.vue';
@@ -109,12 +109,14 @@ const projectId = computed(() => route.params.projectId as string);
 const pageId = computed(() => route.params.pageId as string);
 
 // 初始化存储
-const originalCodeStore = useOriginalCodeStore();
+const aiChatStore = useAiChatStore();
 
 // 页面数据
 const page = ref<Page | null>(null);
 const isLoading = ref(true);
 const isSaving = ref(false);
+
+
 
 // 编辑器选项卡
 const activeTab = ref('chat');
@@ -123,25 +125,29 @@ const activeTab = ref('chat');
 const loadPage = async () => {
   isLoading.value = true;
   try {
-    const pageData = await getPageById(pageId.value);
-
-    // 确保页面数据包含必要的字段
-    if (!pageData.htmlContent && pageData.content) {
-      pageData.htmlContent = pageData.content;
+    // 强制重置页面内容，避免显示缓存数据
+    if (page.value) {
+      page.value.htmlContent = '';
     }
+
+    // 从数据库获取最新数据
+    const pageData = await getPageById(pageId.value);
 
     console.log('加载页面数据成功:', {
       pageId: pageId.value,
-      content: pageData.content,
       htmlContent: pageData.htmlContent
     });
 
+    // 更新页面数据
     page.value = pageData;
 
-    // 确保页面内容正确加载到编辑器和iframe中
-    if (page.value && !page.value.content && page.value.htmlContent) {
-      page.value.content = page.value.htmlContent;
-    }
+    // 设置当前页面ID到AI聊天Store
+    aiChatStore.setCurrentPageId(pageId.value);
+
+    // 加载页面关联的聊天记录
+    await aiChatStore.loadPageChatMessages(pageId.value);
+
+
 
     ElMessage.success('页面加载成功');
   } catch (error) {
@@ -155,23 +161,21 @@ const loadPage = async () => {
 // 更新页面内容
 const updatePageContent = (content: string) => {
   if (page.value) {
-    // 更新页面内容
-    page.value.content = content;
+    // 更新页面内容，只保留对当前页面的更新
     page.value.htmlContent = content;
 
-    // 更新预览
-    originalCodeStore.changeOriginalCode(content);
+
   }
 };
 
 // 保存页面
 const savePage = async () => {
-  if (!page.value) return;
+  if (!page.value || !page.value.htmlContent) return;
 
   isSaving.value = true;
   try {
     // 确保使用最新的内容
-    const currentContent = page.value.content;
+    const currentContent = page.value.htmlContent;
 
     console.log('正在保存HTML内容:', {
       pageId: pageId.value,
@@ -189,14 +193,6 @@ const savePage = async () => {
     // 更新本地页面数据
     page.value = htmlResult;
 
-    // 确保 htmlContent 字段存在
-    if (!page.value.htmlContent) {
-      page.value.htmlContent = page.value.content;
-    }
-
-    // 同步更新 originalCode 存储
-    originalCodeStore.changeOriginalCode(currentContent);
-
     ElMessage.success('页面保存成功');
   } catch (error: any) {
     console.error('保存页面失败:', error);
@@ -210,9 +206,7 @@ const savePage = async () => {
 // 预览页面
 const previewPage = () => {
   // 检查是否有内容可以预览
-  const content = page.value?.content ||
-                 page.value?.htmlContent ||
-                 originalCodeStore.originalCode;
+  const content = page.value?.htmlContent || '';
 
   if (content) {
     // 创建一个新窗口并写入内容
@@ -240,6 +234,17 @@ const getActiveComponent = () => {
       return ChatBox;
     default:
       return CodeMirrorEditor;
+  }
+};
+
+// 重新加载当前页面
+const reloadPage = async () => {
+  try {
+    const pageData = await getPageById(pageId.value);
+    page.value = pageData;
+    console.log('页面已重新加载:', pageData);
+  } catch (error) {
+    console.error('重新加载页面失败:', error);
   }
 };
 

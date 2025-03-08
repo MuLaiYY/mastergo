@@ -153,7 +153,6 @@ const addNewPage = async () => {
       // 创建新页面
       const newPage = await createPage({
         name: value,
-        content: '<div>新页面内容</div>',
         projectId: projectId.value
       });
 

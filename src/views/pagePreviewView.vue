@@ -1,6 +1,6 @@
 <template>
   <!-- 只有在加载失败或没有内容时才显示这个界面 -->
-  <div v-if="!isLoading && (!page || (!page.htmlContent && !page.content))" class="page-preview-container">
+  <div v-if="!isLoading && (!page || !page.htmlContent)" class="page-preview-container">
     <div class="preview-header">
       <button class="back-button" @click="router.back()">
         <span>返回编辑</span>
@@ -49,8 +49,8 @@ const loadPage = async () => {
 
     console.log('获取到页面数据:', pageData);
 
-    // 如果没有 htmlContent，使用 content 作为 HTML 内容
-    const htmlContent = pageData.htmlContent || pageData.content;
+    // 使用htmlContent作为HTML内容
+    const htmlContent = pageData.htmlContent;
 
     if (htmlContent) {
       console.log('使用HTML内容:', htmlContent.substring(0, 100) + '...');

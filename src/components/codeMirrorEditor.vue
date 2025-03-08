@@ -2,7 +2,6 @@
 import CodeMirror from 'codemirror'
 
 import { ref, onMounted, onUnmounted, defineProps, defineEmits, watch } from 'vue'
-import { storeToRefs } from 'pinia'
 // 引入css文件
 import 'codemirror/lib/codemirror.css'
 
@@ -27,12 +26,6 @@ const emit = defineEmits(['update:content'])
 const editor = ref(null) // 绑定到模板中的 DOM 元素
 let editorInstance = null // 存储 CodeMirror 实例
 
-import { useOriginalCodeStore } from '@/stores/originalCode'
-const originalCodeStore = useOriginalCodeStore()
-const { originalCode } = storeToRefs(originalCodeStore)
-
-
-
 //编辑器修改代码函数
 const newContentCode = ref()
 const isUpdating = ref(false)
@@ -40,10 +33,15 @@ const isUpdating = ref(false)
 const saveCode = async () => {
   isUpdating.value = true
   try {
+    if (!newContentCode.value) {
+      ElMessage.warning('没有内容可以更新')
+      return
+    }
+
     // 更新页面内容
     emit('update:content', newContentCode.value)
 
-    ElMessage.success('代码已更新')
+    ElMessage.success('预览已更新')
   } catch (error) {
     console.error('更新代码失败:', error)
     ElMessage.error('更新失败，请重试')
@@ -54,7 +52,7 @@ const saveCode = async () => {
 
 onMounted(() => {
   // 初始化编辑器内容
-  const initialContent = props.page?.content || originalCode.value || ''
+  const initialContent = props.page?.htmlContent || ''
 
   editorInstance = CodeMirror(editor.value, {
     value: initialContent, // 初始内容
@@ -79,10 +77,10 @@ onMounted(() => {
 watch(() => props.page, (newPage, oldPage) => {
   if (newPage && editorInstance) {
     // 如果页面内容发生变化，更新编辑器内容
-    if (newPage.content !== editorInstance.getValue()) {
+    if (newPage.htmlContent !== editorInstance.getValue()) {
       console.log('页面内容已更新，正在更新编辑器...');
-      editorInstance.setValue(newPage.content || '');
-      newContentCode.value = newPage.content || '';
+      editorInstance.setValue(newPage.htmlContent || '');
+      newContentCode.value = newPage.htmlContent || '';
     }
   }
 }, { deep: true });

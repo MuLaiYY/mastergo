@@ -5,7 +5,6 @@ import { API_URL } from './config';
 export interface Page {
   _id: string;
   name: string;
-  content: string;
   htmlContent?: string;
   projectId: string;
   createdAt: string;
@@ -15,14 +14,14 @@ export interface Page {
 // 创建页面数据接口
 export interface CreatePageData {
   name: string;
-  content: string;
+  htmlContent?: string;
   projectId: string;
 }
 
 // 更新页面数据接口
 export interface UpdatePageData {
   name?: string;
-  content?: string;
+  htmlContent?: string;
 }
 
 // 新增接口：保存页面HTML内容
@@ -134,4 +133,51 @@ export const savePageHtml = async (data: SavePageHtmlData): Promise<Page> => {
 // 新增函数：获取页面HTML预览链接
 export const getPagePreviewUrl = (pageId: string): string => {
   return `${API_URL}/pages/${pageId}/preview`;
+};
+
+// 获取页面关联的AI聊天记录
+export const getPageAiConversation = async (pageId: string): Promise<any> => {
+  try {
+    const response = await http.get(`${API_URL}/ai/pages/${pageId}/conversation`);
+    return response.data.data;
+  } catch (error) {
+    console.error('获取页面AI聊天记录失败:', error);
+    throw error;
+  }
+};
+
+// 向页面的AI会话发送消息
+export const sendAiMessage = async (conversationId: string, message: string, userMsgOnly: boolean = false): Promise<any> => {
+  try {
+    const response = await http.post(`${API_URL}/ai/conversations/${conversationId}/messages`, {
+      content: message,
+      userMsgOnly
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('发送AI消息失败:', error);
+    throw error;
+  }
+};
+
+// 保存AI回复到后端
+export const saveAiResponseToApi = async (
+  conversationId: string,
+  content: string,
+  type: string,
+  newElement: any = null
+): Promise<any> => {
+  try {
+    const response = await http.post(`${API_URL}/ai/conversations/${conversationId}/ai-response`, {
+      content,
+      type,
+      metadata: {
+        newElement
+      }
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('保存AI回复失败:', error);
+    throw error;
+  }
 };

@@ -2,13 +2,10 @@
 import { ref, watch, reactive, onUnmounted, nextTick, defineProps } from 'vue'
 import { storeToRefs } from 'pinia'
 
-import { useOriginalCodeStore } from '@/stores'
 import { useComponentAreaStore } from '@/stores'
 import { useAiChatStore } from '@/stores'
 import Sortable from 'sortablejs'
 
-const originalCodeStore = useOriginalCodeStore()
-const { originalCode } = storeToRefs(originalCodeStore)
 const componentArea = useComponentAreaStore()
 const { components } = storeToRefs(componentArea)
 const aiChatStore = useAiChatStore()
@@ -117,6 +114,8 @@ const props = defineProps({
     required: true
   }
 })
+
+
 
 //#region 元素信息展示模块
 
@@ -293,20 +292,6 @@ const handleElementLeave = (e) => {
   existing?.remove()
 }
 //#endregion
-//监听srcdoc变化
-watch(
-  originalCode,
-  (newCode) => {
-    console.log('originalCode发生变化，将重新加载iframe')
-
-    if (myIframe.value) {
-      nextTick(() => {
-        myIframe.value.srcdoc = newCode
-      })
-    }
-  },
-  { deep: true },
-)
 //#region 右键菜单 以及修改属性
 // 初始化右键菜单
 const initContextMenu = (iframeWindow, iframeDocument) => {
@@ -1015,6 +1000,63 @@ const iframeLoad = () => {
   initContextMenu(iframeWindow, iframeDocument)
 }
 
+const defaultIframeContent = `
+  <!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f9fafb;
+      color: #6b7280;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      max-width: 80%;
+    }
+    .message {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+    .tip {
+      font-size: 0.875rem;
+      color: #9ca3af;
+    }
+    .spinner {
+      display: inline-block;
+      width: 2rem;
+      height: 2rem;
+      border: 3px solid rgba(139, 92, 246, 0.3);
+      border-radius: 50%;
+      border-top-color: #8b5cf6;
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 1rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner"></div>
+    <div class="message">等待AI生成内容...</div>
+    <div class="tip">使用右侧AI助手，输入您的需求来生成页面</div>
+  </div>
+</body>
+</html>
+`
 // 导出方法，以便其他组件可以调用
 defineExpose({
 
@@ -1022,7 +1064,7 @@ defineExpose({
 </script>
 <template>
   <div ref="iframeWrapper" class="iframe-wrapper">
-    <iframe @load="iframeLoad" ref="myIframe" :srcdoc="props.page?.htmlContent || props.page?.content || originalCode" frameborder="0"></iframe>
+    <iframe @load="iframeLoad" ref="myIframe" :srcdoc="props.page?.htmlContent || defaultIframeContent" frameborder="0"></iframe>
     <!-- 右键菜单 -->
     <div
       v-if="contextMenu.visible"
