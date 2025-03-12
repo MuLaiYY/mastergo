@@ -181,3 +181,18 @@ export const saveAiResponseToApi = async (
     throw error;
   }
 };
+
+/**
+ * 获取项目首页
+ * @param projectId 项目ID
+ * @returns 项目首页
+ */
+export const getProjectHomePage = async (projectId: string): Promise<Page> => {
+  try {
+    const response = await http.get(`${API_URL}/projects/${projectId}/homepage`);
+    return response.data.data;
+  } catch (error) {
+    console.error('获取项目首页失败:', error);
+    throw error;
+  }
+};

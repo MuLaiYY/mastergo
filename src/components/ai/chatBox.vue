@@ -22,8 +22,8 @@ const emit = defineEmits(['update:content'])
 const aiChatStore = useAiChatStore()
 // 使用获取当前页面聊天记录的函数
 const chatMsgs = computed(() => aiChatStore.getCurrentPageChatMsgs())
-const { addChatMsg, setSelectedElement, setIsRequireAIChange, setCurrentPageId } = aiChatStore
-const { selectedElement, iframeEntrance } = storeToRefs(aiChatStore)
+const { addChatMsg, setSelectedElement, setIsRequireAIChange, setIsAllowSelectElement } = aiChatStore
+const { selectedElement, iframeEntrance, currentPageId } = storeToRefs(aiChatStore)
 const userInput = ref('')
 const sendBtn = ref(null)
 const chatContainer = ref(null)
@@ -65,12 +65,26 @@ const handleInput = (event) => {
   isInputEmpty.value = !userInput.value.trim() // 更新输入状态
 }
 
-onMounted(() => {
+onMounted(async () => {
   scrollToBottom()
 
-  // 设置当前页面ID
-  if (props.page && props.page._id) {
-    setCurrentPageId(props.page._id)
+  // 先加载聊天记录
+  if (aiChatStore.currentPageId) {
+    console.log('开始加载聊天记录')
+    await aiChatStore.loadPageChatMessages(aiChatStore.currentPageId)
+    console.log('聊天记录加载完成')
+  }
+
+  // 检查是否有初始消息需要发送
+
+  const initialMsg = aiChatStore.getAndClearInitialMessage()
+  if (initialMsg) {
+    // 将初始消息设置到输入框
+    userInput.value = initialMsg
+    // 自动发送消息
+    nextTick(() => {
+      sendMessage()
+    })
   }
 
   // 添加输入事件监听
@@ -78,6 +92,7 @@ onMounted(() => {
   if (textarea) {
     textarea.addEventListener('input', handleInput)
   }
+  hljs.highlightAll()
 })
 // 添加滚动到底部的函数
 const scrollToBottom = async () => {
@@ -108,20 +123,35 @@ const sendMessage = async () => {
 
   // 保存当前输入内容
   const currentInput = userInput.value
+  console.log('currentInput', currentInput)
 
-  // 立即清空输入框
-  document.getElementById('user-input').value = ''
-  userInput.value = ''
-  isInputEmpty.value = true // 更新输入状态为空
-
-  if (selectedElement.value) {
-    trueMessage = `${currentInput} 。待修改组件代码如下：${selectedElement.value.outerHTML}`
-  } else {
-    trueMessage = currentInput
-  }
   try {
-    //禁用发送按钮
-    sendBtn.value.disabled = true
+    // 禁用发送按钮
+    if (sendBtn.value) {
+      sendBtn.value.disabled = true
+    }
+
+    // 确保有pageId
+    if (!aiChatStore.currentPageId) {
+      throw new Error('页面ID未设置')
+    }
+
+    // 如果没有conversationId，先加载一次聊天记录
+    if (!aiChatStore.currentConversationId) {
+      console.log('尝试重新加载聊天记录以获取会话ID')
+      await aiChatStore.loadPageChatMessages(aiChatStore.currentPageId)
+    }
+
+    // 立即清空输入框
+    document.getElementById('user-input').value = ''
+    userInput.value = ''
+    isInputEmpty.value = true // 更新输入状态为空
+
+    if (selectedElement.value) {
+      trueMessage = `${currentInput} 。待修改组件代码如下：${selectedElement.value.outerHTML}`
+    } else {
+      trueMessage = currentInput
+    }
 
     // 添加用户消息到UI
     const userMsgId = Date.now()
@@ -139,7 +169,7 @@ const sendMessage = async () => {
     const aiMsgId = Date.now() + 1
     addChatMsg({
       id: aiMsgId,
-      message: '', // 初始为空，将通过流式更新
+      message: '思考中...', // 初始显示思考中
       content: '',
       role: 'assistant',
       selectedElement: null,
@@ -149,10 +179,12 @@ const sendMessage = async () => {
 
     // 尝试使用API发送消息
     try {
-      // 只发送用户消息，先不创建AI回复
-      await aiChatStore.sendMessageToApi(trueMessage, true) // 添加参数表示只发送用户消息
+      // 发送用户消息到API
+      await aiChatStore.sendMessageToApi(trueMessage, true)
+      console.log('用户消息已发送到API')
     } catch (error) {
-      console.error('通过API发送消息失败，使用本地模型:', error)
+      console.error('通过API发送消息失败:', error)
+      ElMessage.error('消息发送失败，但会继续尝试获取AI回复')
     }
 
     // 获取流式响应
@@ -210,7 +242,6 @@ const sendMessage = async () => {
     }
 
     // 更新最终消息类型和内容
-
     const msgIndex = chatMsgs.value.findIndex((msg) => msg.id === aiMsgId)//
     if (msgIndex !== -1) {
       chatMsgs.value[msgIndex].type = type
@@ -225,7 +256,16 @@ const sendMessage = async () => {
     } catch (error) {
       console.error('保存AI回复到数据库失败:', error)
     }
-    renderGeneratedPage(chatMsgs.value[msgIndex].id)
+
+    // 只有生成页面类型时才自动渲染
+    if (type === 'generate_page') {
+      console.log('检测到生成页面类型，自动渲染页面')
+      renderGeneratedPage(chatMsgs.value[msgIndex].id)
+    } else if (type === 'modify_component') {
+      console.log('检测到修改组件类型，请点击"修改"按钮应用更改')
+      insertElement(chatMsgs.value[msgIndex].id)
+    }
+
     // 应用代码高亮
     nextTick(() => {
       const container = chatContainer.value
@@ -245,7 +285,7 @@ const sendMessage = async () => {
             console.log('最新消息中未找到代码块')
           }
         } else {
-          console.log('未找到AI消息')
+          console.log('AI消息中未产生代码块')
         }
       }
     })
@@ -258,6 +298,7 @@ const sendMessage = async () => {
       sendBtn.value.disabled = false
     }
   }
+  console.log('msg',chatMsgs.value)
 }
 
 //提取回答中的组件代码
@@ -270,7 +311,9 @@ function parseAIResponse(response) {
   let htmlContent = ''
   let cssContent = ''
   let jsContent = ''
-
+  if (!htmlElement) {
+    return { html: '', css: '', js: '' }
+  }
   if (htmlElement.textContent.trim().includes('<html')) {
     // 保存完整的HTML内容
     htmlContent = htmlElement.textContent.trim()
@@ -361,16 +404,16 @@ const insertElement = (id) => {
   if (!msg || !msg.selectedElement || !iframeEntrance.value) return
 
   console.log(msg.newElement)
-   //先移除选中元素的特殊高亮
-   console.log('清除特殊高亮前',msg.selectedElement)
-   msg.selectedElement.classList.remove('special-hover-highlight')
-   console.log('清除特殊高亮后',msg.selectedElement)
+
 
 
   //关闭ai修改
   setIsRequireAIChange(false)
   //插入元素
+  //移除掉msg.newElement.html里的special-hover-highlight类名
+  msg.newElement.html = msg.newElement.html.replace('special-hover-highlight', '')
   msg.selectedElement.outerHTML = msg.newElement.html
+
   //插入css
   if (iframeEntrance.value && iframeEntrance.value.head) {
     const styleTag = iframeEntrance.value.createElement('style')
@@ -383,8 +426,12 @@ const insertElement = (id) => {
     scriptTag.textContent = msg.newElement.js
     iframeEntrance.value.body.appendChild(scriptTag)
   }
+
   //清空选中元素
   setSelectedElement(null)
+  //关闭元素选择
+  setIsAllowSelectElement(false)
+
 }
 
 // 新增：渲染生成的页面
@@ -447,9 +494,7 @@ const renderGeneratedPage = (id) => {
 //   { deep: true }
 // )
 
-onMounted(() => {
-  hljs.highlightAll()
-})
+
 //放大输入框
 const enlargeInput = () => {
   isEnlarged.value = !isEnlarged.value
@@ -482,7 +527,7 @@ const enlargeInput = () => {
         <div v-if="item.role === 'assistant'" v-html="item.message" class="message-content"></div>
         <div v-if="item.role === 'assistant' && item.type !== 'chat'" class="tools">
           <!-- 修改组件按钮，仅在修改组件类型时启用 -->
-          <button v-if="item.type === 'modify_component'" @click="insertElement(item.id)">
+          <!-- <button v-if="item.type === 'modify_component'" @click="insertElement(item.id)">
             <svg
               t="1740816043564"
               class="icon"
@@ -499,7 +544,7 @@ const enlargeInput = () => {
                 p-id="38344"
               ></path>
             </svg>
-          </button>
+          </button> -->
 
           <!-- 渲染页面按钮，仅在生成页面类型时启用 -->
           <button v-if="item.type === 'generate_page'" @click="renderGeneratedPage(item.id)">
@@ -575,7 +620,7 @@ const enlargeInput = () => {
             p-id="4055"
           ></path>
           <path
-            d="M301.4 278l180.4 184.6c6.2 6.3 6.1 16.5-0.3 22.6-6.3 6.2-16.5 6.1-22.6-0.3L278.5 300.4c-6.2-6.3-6.1-16.5 0.3-22.6 6.3-6.2 16.4-6.1 22.6 0.2zM756.6 590.7c8.8 0 16 7.2 15.9 16.1l-0.5 166-166.1-0.5c-8.8 0-16-7.2-15.9-16.1 0-8.8 7.2-16 16.1-15.9l134.1 0.4 0.4-134.1c0-8.8 7.2-16 16-15.9z"
+            d="M301.4 278l180.4 184.6c6.2 6.3 6.1 16.5-0.3 22.6-6.3 6.2-16.5 6.1-22.6-0.3L278.5 300.4c-6.2-6.3-6.1-16.5 0.3-22.6 6.3-6.2 16.4-6.1 22.6 0zM756.6 590.7c8.8 0 16 7.2 15.9 16.1l-0.5 166-166.1-0.5c-8.8 0-16-7.2-15.9-16.1 0-8.8 7.2-16 16.1-15.9l134.1 0.4 0.4-134.1c0-8.8 7.2-16 16-15.9z"
             fill=""
             p-id="4056"
           ></path>
@@ -603,188 +648,303 @@ const enlargeInput = () => {
 .chat-box {
   width: 100%;
   height: 100%;
-  background-color: #fff;
+  background: linear-gradient(135deg,
+    rgba(139, 92, 246, 0.02) 0%,
+    rgba(236, 72, 153, 0.02) 50%,
+    rgba(139, 92, 246, 0.02) 100%
+  );
   position: relative;
 
   #chat-container {
     width: 100%;
     height: 80%;
     overflow-y: auto;
-
     gap: 20px;
-    // padding-bottom: 10px;
-    transition: height 0.3s ease; // 添加过渡效果
+    transition: height 0.3s ease;
+    padding: 1rem;
 
     &.reduced-height {
-      height: 45%; // 当输入框放大时，聊天容器高度减少
+      height: 45%;
     }
 
-    &::-webkit-scrollbar-track-piece {
-      background-color: white;
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
     }
 
     &::-webkit-scrollbar-thumb {
-      background-color: rgb(229, 231, 235);
+      background: rgba(139, 92, 246, 0.2);
+      border-radius: 3px;
+
+      &:hover {
+        background: rgba(139, 92, 246, 0.3);
+      }
     }
 
-    // 移除旧的代码折叠按钮样式，只保留折叠后的代码样式
     :deep(pre) {
       position: relative;
+      background: rgba(255, 255, 255, 0.6) !important;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(139, 92, 246, 0.1);
+      border-radius: 12px;
+      margin: 1rem 0;
 
-      code.code-folded {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: block;
-        max-height: 24px;
-        position: relative;
+      code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem;
+        line-height: 1.5;
 
-        &::after {
-          content: "...（已折叠）";
-          color: #888;
-          margin-left: 10px;
+        &.code-folded {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: block;
+          max-height: 24px;
+          position: relative;
+          padding: 0.75rem 1rem;
+          background: rgba(255, 255, 255, 0.8);
+          border-radius: 12px;
+          transition: all 0.3s ease;
+
+          &::after {
+            content: "...（已折叠）";
+            color: rgba(139, 92, 246, 0.6);
+            margin-left: 0.5rem;
+            font-style: italic;
+          }
         }
       }
     }
   }
+
   #input-container {
     width: 100%;
     height: 20%;
     position: relative;
-    transition: all 0.3s ease; // 添加过渡效果
+    transition: all 0.3s ease;
+    padding: 0 1rem 1rem;
 
     &.enlarged {
-      height: 55%; // 放大后的高度
+      height: 55%;
       z-index: 10;
 
       .input-box {
         height: calc(100% - 30px);
 
         textarea {
-          height: 90%; // 放大后文本区域高度
+          height: 90%;
+        }
+      }
+    }
+
+    .input-tools {
+      width: 100%;
+      height: 30px;
+      padding: 0 0.5rem;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 0.5rem;
+
+      .icon {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: rgba(139, 92, 246, 0.6);
+
+        &:hover {
+          transform: scale(1.1);
+          color: rgba(139, 92, 246, 0.8);
         }
       }
     }
 
     .input-box {
-      border: 1px solid rgb(229, 231, 235);
-      border-radius: 30px;
-      padding: 5px 10px;
+      border: 1px solid rgba(139, 92, 246, 0.15);
+      border-radius: 16px;
+      padding: 0.75rem 1rem;
       position: relative;
       width: 100%;
       height: calc(100% - 30px);
-      transition: height 0.3s ease;
-      background-color: white;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px -2px rgba(139, 92, 246, 0.08);
+
+      &:hover {
+        border-color: rgba(139, 92, 246, 0.3);
+        box-shadow: 0 6px 24px -4px rgba(139, 92, 246, 0.12);
+      }
 
       textarea {
-        width: 90%;
+        width: calc(100% - 40px);
         height: 80%;
-        font-size: 16px;
-        font-weight: 500;
-        color: #333;
-        //行间距
-        line-height: 1.3;
-        padding: 10px;
-        resize: none; // 防止用户手动调整大小
-        transition: height 0.3s ease; // 添加过渡效果
+        font-size: 0.95rem;
+        font-weight: 400;
+        color: rgba(76, 29, 149, 0.9);
+        line-height: 1.5;
+        padding: 0.5rem;
+        resize: none;
         border: none;
         outline: none;
+        background: transparent;
+
+        &::placeholder {
+          color: rgba(139, 92, 246, 0.4);
+        }
       }
+
       button {
         position: absolute;
-        right: 10px;
-        bottom: 10px;
-        width: 30px;
-        height: 30px;
+        right: 0.75rem;
+        bottom: 0.75rem;
+        width: 32px;
+        height: 32px;
+        padding: 6px;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9));
         cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.3);
+          background: linear-gradient(135deg, rgba(139, 92, 246, 1), rgba(236, 72, 153, 1));
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
+        }
+
         img {
           width: 100%;
           height: 100%;
+          transition: transform 0.3s ease;
         }
-      }
-    }
-    .input-tools {
-      width: 100%;
-      height: 30px;
-      padding: 0 5%;
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
 
-      .icon {
-        cursor: pointer;
-        transition: transform 0.3s ease;
-
-        &:hover {
+        &:hover img {
           transform: scale(1.1);
         }
       }
     }
   }
+
   .user-message {
     display: flex;
     flex-direction: row-reverse;
     width: 95%;
-    margin: auto;
-    margin-bottom: 20px;
+    margin: 0 auto 1.5rem;
 
     .message-content {
       max-width: 80%;
+      font-size: 0.95rem;
+      padding: 1rem 1.25rem;
+      border-radius: 16px 16px 4px 16px;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9));
+      color: white;
+      box-shadow: 0 4px 16px -4px rgba(139, 92, 246, 0.3);
+      line-height: 1.5;
+      position: relative;
+      overflow: hidden;
 
-      font-size: 16px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      background-color: rgb(249, 250, 251);
-      overflow-y: auto;
-      border: 1px solid rgb(229, 231, 235);
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg,
+          rgba(255, 255, 255, 0.1),
+          rgba(255, 255, 255, 0.05)
+        );
+        border-radius: inherit;
+      }
     }
   }
+
   .ai-message {
     display: flex;
     flex-direction: row;
     width: 95%;
-    margin: auto;
-    margin-bottom: 30px; // 增加底部间距，为工具栏腾出空间
+    margin: 0 auto 2rem;
     position: relative;
+
+    .message-content {
+      max-width: 100%;
+      font-size: 0.95rem;
+      padding: 1rem 1.25rem;
+      border-radius: 16px 16px 16px 4px;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(139, 92, 246, 0.15);
+      color: rgba(76, 29, 149, 0.9);
+      box-shadow: 0 4px 20px -4px rgba(139, 92, 246, 0.08);
+      line-height: 1.5;
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg,
+          rgba(139, 92, 246, 0.05),
+          rgba(236, 72, 153, 0.05)
+        );
+        border-radius: inherit;
+        pointer-events: none;
+      }
+    }
+
     .tools {
       position: absolute;
-      bottom: -30px;
-      left: 5%;
+      bottom: -2rem;
+      left: 1.25rem;
       display: flex;
-      flex-direction: row;
-      gap: 10px;
+      gap: 0.75rem;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: all 0.3s ease;
+
       button {
         cursor: pointer;
-        background: transparent;
-        border: none;
-        padding: 4px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(139, 92, 246, 0.15);
+        padding: 0.375rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 4px;
-        transition: background-color 0.2s;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px -2px rgba(139, 92, 246, 0.1);
 
         &:hover {
-          background-color: #f0f0f0;
+          background: rgba(255, 255, 255, 0.9);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.15);
+          border-color: rgba(139, 92, 246, 0.3);
+
+          .icon {
+            color: rgba(139, 92, 246, 0.9);
+            transform: scale(1.1);
+          }
         }
 
-        &:active {
-          background-color: #e0e0e0;
+        .icon {
+          color: rgba(139, 92, 246, 0.6);
+          transition: all 0.3s ease;
         }
       }
     }
-    .message-content {
-      max-width: 100%;
-      border: 1px solid rgb(229, 231, 235);
-      scrollbar-width: none;
 
-      text-align: left;
-      font-size: 16px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      background-color: rgb(249, 250, 251);
-      overflow-y: auto;
+    &:hover .tools {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 }

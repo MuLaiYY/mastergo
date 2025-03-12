@@ -60,6 +60,15 @@
             <code-icon class="tab-icon" />
             <span>代码</span>
           </button>
+
+          <button
+            class="tab-button"
+            :class="{ 'active': activeTab === 'template' }"
+            @click="activeTab = 'template'"
+          >
+            <layout-template-icon class="tab-icon" />
+            <span>模板</span>
+          </button>
         </div>
 
         <!-- 编辑器内容区域 -->
@@ -86,7 +95,8 @@ import {
   Eye as EyeIcon,
   Code as CodeIcon,
   Layout as LayoutIcon,
-  MessageSquare as MessageSquareIcon
+  MessageSquare as MessageSquareIcon,
+  LayoutTemplate as LayoutTemplateIcon
 } from 'lucide-vue-next';
 
 // 导入API接口
@@ -101,6 +111,7 @@ import IframePage from '@/components/iframePage/iframePage.vue';
 import CodeMirrorEditor from '@/components/codeMirrorEditor.vue';
 import ChatBox from '@/components/ai/chatBox.vue';
 import ComponentArea from '@/components/componentArea/componentArea.vue';
+import TemplatePage from '@/components/templatePage.vue';
 
 // 路由和页面ID
 const route = useRoute();
@@ -143,11 +154,6 @@ const loadPage = async () => {
 
     // 设置当前页面ID到AI聊天Store
     aiChatStore.setCurrentPageId(pageId.value);
-
-    // 加载页面关联的聊天记录
-    await aiChatStore.loadPageChatMessages(pageId.value);
-
-
 
     ElMessage.success('页面加载成功');
   } catch (error) {
@@ -232,6 +238,8 @@ const getActiveComponent = () => {
       return ComponentArea;
     case 'chat':
       return ChatBox;
+    case 'template':
+      return TemplatePage;
     default:
       return CodeMirrorEditor;
   }
@@ -260,94 +268,138 @@ onMounted(async () => {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  background: linear-gradient(135deg,
+    rgba(139, 92, 246, 0.03) 0%,
+    rgba(236, 72, 153, 0.03) 50%,
+    rgba(139, 92, 246, 0.03) 100%
+  );
 }
 
 .design-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: white;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+  box-shadow: 0 4px 20px -2px rgba(139, 92, 246, 0.08);
 
   .header-left {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 1.25rem;
 
     .back-button {
       display: flex;
       align-items: center;
-      background-color: transparent;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      padding: 6px 12px;
-      font-size: 14px;
-      color: #4b5563;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 10px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      color: rgba(76, 29, 149, 0.9);
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
 
       &:hover {
-        background-color: #f9fafb;
+        background: rgba(139, 92, 246, 0.15);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.2);
       }
 
       .icon {
-        width: 16px;
-        height: 16px;
-        margin-right: 6px;
+        width: 1.125rem;
+        height: 1.125rem;
+        margin-right: 0.5rem;
+        transition: transform 0.3s ease;
+      }
+
+      &:hover .icon {
+        transform: translateX(-2px);
       }
     }
 
     .page-title {
-      font-size: 18px;
+      font-size: 1.5rem;
       font-weight: 600;
-      color: #1f2937;
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin: 0;
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 40%;
+        height: 2px;
+        background: linear-gradient(90deg, rgba(139, 92, 246, 0.5), rgba(236, 72, 153, 0.2));
+        border-radius: 2px;
+      }
     }
   }
 
   .header-actions {
     display: flex;
-    gap: 8px;
+    gap: 0.75rem;
 
     button {
       display: flex;
       align-items: center;
-      border-radius: 6px;
-      padding: 6px 12px;
-      font-size: 14px;
+      border-radius: 10px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
 
       .icon {
-        width: 16px;
-        height: 16px;
-        margin-right: 6px;
+        width: 1.125rem;
+        height: 1.125rem;
+        margin-right: 0.5rem;
+        transition: transform 0.3s ease;
       }
 
       &.save-button {
-        background-color: #8b5cf6;
-        border: 1px solid #8b5cf6;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9));
+        border: none;
         color: white;
+        box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.3);
 
         &:hover {
-          background-color: #7c3aed;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px -2px rgba(139, 92, 246, 0.4);
+          background: linear-gradient(135deg, rgba(139, 92, 246, 1), rgba(236, 72, 153, 1));
         }
 
         &:disabled {
           opacity: 0.7;
           cursor: not-allowed;
+          transform: none;
+        }
+
+        &:hover .icon {
+          transform: translateY(-1px);
         }
       }
 
       &.preview-button {
-        background-color: white;
-        border: 1px solid #d1d5db;
-        color: #4b5563;
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        color: rgba(76, 29, 149, 0.9);
 
         &:hover {
-          background-color: #f9fafb;
+          background: rgba(139, 92, 246, 0.15);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.2);
+        }
+
+        &:hover .icon {
+          transform: scale(1.1);
         }
       }
     }
@@ -358,51 +410,76 @@ onMounted(async () => {
   flex: 1;
   display: flex;
   overflow: hidden;
+  background: rgba(255, 255, 255, 0.5);
 
   .preview-area {
-    flex: 4; // 左侧占比更大
+    flex: 4;
     overflow: hidden;
-    border-right: 1px solid #e5e7eb;
+    border-right: 1px solid rgba(139, 92, 246, 0.1);
+    background: white;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-right: 1px solid rgba(139, 92, 246, 0.1);
+      pointer-events: none;
+      background: linear-gradient(135deg,
+        rgba(139, 92, 246, 0.02) 0%,
+        rgba(236, 72, 153, 0.02) 50%,
+        rgba(139, 92, 246, 0.02) 100%
+      );
+    }
   }
 
   .edit-area {
-    flex: 2; // 右侧占比较小
+    flex: 2;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
 
     .editor-tabs {
       display: flex;
-      padding: 8px 12px;
-      border-bottom: 1px solid #e5e7eb;
-      background-color: #f9fafb;
+      padding: 0.75rem 1rem;
+      background: rgba(249, 250, 251, 0.8);
+      border-bottom: 1px solid rgba(139, 92, 246, 0.1);
 
       .tab-button {
         display: flex;
         align-items: center;
-        padding: 6px 12px;
+        padding: 0.5rem 1rem;
         border: none;
-        background-color: transparent;
-        font-size: 14px;
-        color: #6b7280;
+        background: transparent;
+        font-size: 0.9rem;
+        color: rgba(107, 114, 128, 0.8);
         cursor: pointer;
-        border-radius: 4px;
-        margin-right: 4px;
+        border-radius: 8px;
+        margin-right: 0.5rem;
+        transition: all 0.3s ease;
 
         &:hover {
-          background-color: #f3f4f6;
+          background: rgba(139, 92, 246, 0.08);
+          color: rgba(139, 92, 246, 0.9);
         }
 
         &.active {
-          background-color: #ede9fe;
-          color: #6d28d9;
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.15));
+          color: rgba(139, 92, 246, 1);
           font-weight: 500;
         }
 
         .tab-icon {
-          width: 16px;
-          height: 16px;
-          margin-right: 6px;
+          width: 1.125rem;
+          height: 1.125rem;
+          margin-right: 0.5rem;
+          transition: transform 0.3s ease;
+        }
+
+        &:hover .tab-icon {
+          transform: scale(1.1);
         }
       }
     }
@@ -410,6 +487,8 @@ onMounted(async () => {
     .editor-content {
       flex: 1;
       overflow: hidden;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(12px);
     }
   }
 }
@@ -425,7 +504,7 @@ onMounted(async () => {
 
     .preview-area {
       border-right: none;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.1);
     }
   }
 }

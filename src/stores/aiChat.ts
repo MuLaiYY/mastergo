@@ -36,6 +36,14 @@ export const useAiChatStore = defineStore('aiChat', () => {
   // 当前会话ID
   const currentConversationId = ref<string>('')
 
+  // 添加初始消息状态
+  const initialMessage = ref<string>('')
+
+  // 是否允许选择元素
+  const isAllowSelectElement = ref<boolean>(false)
+  function setIsAllowSelectElement(value: boolean) {
+    isAllowSelectElement.value = value
+  }
   // 设置当前页面ID
   function setCurrentPageId(pageId: string) {
     currentPageId.value = pageId
@@ -106,6 +114,18 @@ export const useAiChatStore = defineStore('aiChat', () => {
     isRequireAIChange.value = value
   }
 
+  // 设置初始消息
+  function setInitialMessage(message: string) {
+    initialMessage.value = message
+  }
+
+  // 获取并清除初始消息
+  function getAndClearInitialMessage() {
+    const message = initialMessage.value
+    initialMessage.value = ''
+    return message
+  }
+
   // 加载页面聊天记录
   async function loadPageChatMessages(pageId: string) {
     try {
@@ -114,8 +134,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
         return
       }
 
-      // 设置当前页面ID
-      setCurrentPageId(pageId)
+      // // 设置当前页面ID
+      // setCurrentPageId(pageId)
 
       // 清除当前页面的聊天记录
       if (!pageChats[pageId]) {
@@ -208,6 +228,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
   }
 
   return {
+    initialMessage,
+    setInitialMessage,
+    getAndClearInitialMessage,
     pageChats,
     getCurrentPageChatMsgs,
     selectedElement,
@@ -225,6 +248,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
     clearCurrentPageChatMsgs,
     loadPageChatMessages,
     sendMessageToApi,
-    saveAiResponse
+    saveAiResponse,
+    isAllowSelectElement,
+    setIsAllowSelectElement
   }
 }, { persist: true })

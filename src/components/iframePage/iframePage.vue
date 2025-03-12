@@ -9,14 +9,14 @@ import Sortable from 'sortablejs'
 const componentArea = useComponentAreaStore()
 const { components } = storeToRefs(componentArea)
 const aiChatStore = useAiChatStore()
-const { setSelectedElement, setIframeEntrance, setIsRequireAIChange } = aiChatStore
-const { isRequireAIChange } = storeToRefs(aiChatStore)
+const { setSelectedElement, setIframeEntrance, setIsRequireAIChange ,setIsAllowSelectElement} = aiChatStore
+const { isRequireAIChange , isAllowSelectElement,} = storeToRefs(aiChatStore)
 const myIframe = ref(null)
 const iframeWrapper = ref(null)
 const iframeObserver = ref(null) // 用于存储MutationObserver实例
 let lastHoverElement = null
 const isDragging = ref(false)
-const isAllowSelectElement = ref(false)
+
 const contextMenu = reactive({
   visible: false,
   x: 0,
@@ -222,7 +222,7 @@ body{
 
 //是否允许选中元素
 const changeAllowSelect = () => {
-  isAllowSelectElement.value = !isAllowSelectElement.value
+  setIsAllowSelectElement(!isAllowSelectElement.value)
   // 清除当前高亮
   if (lastHoverElement) {
     lastHoverElement.classList.remove('special-hover-highlight')
@@ -795,15 +795,15 @@ const allowScale = () => {
 //#region 修改属性
 //开启修改属性
 const allowChangeProperty = () => {
-  isAllowChangeProperty.value = true
+  isAllowChangeProperty.value = !isAllowChangeProperty.value
   hideMenu()
 }
-//取消修改属性
-const cancelChangedProperty = () => {
-  setTimeout(() => {
-    isAllowChangeProperty.value = false
-  }, 500)
-}
+// //取消修改属性
+// const cancelChangedProperty = () => {
+//   setTimeout(() => {
+//     isAllowChangeProperty.value = false
+//   }, 500)
+// }
 //保存修改后的属性
 const saveChangedProperty = () => {
   if (!isAllowChangeProperty.value) return
@@ -1051,8 +1051,8 @@ const defaultIframeContent = `
 <body>
   <div class="container">
     <div class="spinner"></div>
-    <div class="message">等待AI生成内容...</div>
-    <div class="tip">使用右侧AI助手，输入您的需求来生成页面</div>
+    <div class="message">开始您的创作之旅...</div>
+    <div class="tip">可以使用右侧AI助手，直接输入您的需求来生成页面</div>
   </div>
 </body>
 </html>
@@ -1083,7 +1083,7 @@ defineExpose({
         id="changeProperty"
         :disabled="!isAllowSelectElement"
       >
-        修改属性
+        {{ isAllowChangeProperty ? '关闭修改属性' : '开启修改属性' }}
       </button>
       <button class="menu-item" @click="allowRotate" :disabled="!isAllowSelectElement">旋转</button>
       <button class="menu-item" @click="allowScale" :disabled="!isAllowSelectElement">放缩</button>
@@ -1104,7 +1104,7 @@ defineExpose({
     </div>
   </div>
 
-  <div class="property" v-if="isAllowChangeProperty">
+  <!-- <div class="property" v-if="isAllowChangeProperty">
     <div
       class="item"
       v-for="(item, index) in Object.values(targetElementPropertyList)"
@@ -1116,7 +1116,7 @@ defineExpose({
 
     <button @click="cancelChangedProperty" class="property-cancel">取消</button>
     <button @click="saveChangedProperty" class="property-save">保存</button>
-  </div>
+  </div> -->
 </template>
 <style scoped lang="less">
 .iframe-wrapper {

@@ -4,8 +4,8 @@
     <div class="sidebar-content">
       <!-- Logo 区域 -->
       <div class="logo-container">
-        <img src="@/assets/logo.svg" alt="Logo" class="logo" />
-        <span v-if="isExpanded" class="logo-text">MasterGo</span>
+        <img src="@/assets/original.png" alt="Logo" class="logo"  />
+        <span v-if="isExpanded" class="logo-text">Reblend</span>
       </div>
 
       <!-- 导航菜单 -->
@@ -121,13 +121,6 @@ const navigateTo = (item: any) => {
 // 变量定义
 @sidebar-width-collapsed: 64px;
 @sidebar-width-expanded: 200px;
-@primary-color: #8b5cf6;
-@primary-hover: #7c3aed;
-@text-color: #1f2937;
-@text-light: #6b7280;
-@border-color: #e5e7eb;
-@bg-color: #ffffff;
-@bg-hover: #f9fafb;
 @transition-duration: 0.3s;
 
 // 侧边栏容器
@@ -137,17 +130,30 @@ const navigateTo = (item: any) => {
   left: 0;
   height: 100vh;
   width: @sidebar-width-collapsed;
-  background-color: @bg-color;
-  border-right: 1px solid @border-color;
-  transition: width @transition-duration ease;
+  background-color: var(--bg-secondary);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid var(--border-light);
+  transition: all @transition-duration ease;
   overflow: hidden;
   z-index: 100;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
 
   &.expanded {
     width: @sidebar-width-expanded;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, var(--primary-light) 0%, transparent 100%);
+    opacity: 0.05;
+    pointer-events: none;
   }
 }
 
@@ -158,10 +164,19 @@ const navigateTo = (item: any) => {
   flex-direction: column;
   overflow-y: auto;
 
-  // 隐藏滚动条
+  // 美化滚动条
   &::-webkit-scrollbar {
-    width: 0;
+    width: 4px;
     background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(139, 92, 246, 0.2);
+    border-radius: 2px;
+
+    &:hover {
+      background-color: rgba(139, 92, 246, 0.4);
+    }
   }
 }
 
@@ -170,20 +185,29 @@ const navigateTo = (item: any) => {
   display: flex;
   align-items: center;
   padding: 16px;
+  padding-left: 0px;
   height: 64px;
-  border-bottom: 1px solid @border-color;
+  border-bottom: 1px solid var(--border-light);
 
   .logo {
-    width: 32px;
-    height: 32px;
+    width: 64px;
+    height: 64px;
     object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(139, 92, 246, 0.2));
+    transition: all @transition-duration ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
   }
 
   .logo-text {
-    margin-left: 12px;
     font-size: 18px;
     font-weight: 600;
-    color: @text-color;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     white-space: nowrap;
   }
 }
@@ -201,27 +225,33 @@ const navigateTo = (item: any) => {
   li {
     position: relative;
     cursor: pointer;
+    margin: 4px 8px;
+    border-radius: var(--radius-md);
+    transition: all @transition-duration ease;
 
     &.active {
-      background-color: fade(@primary-color, 10%);
+      background: linear-gradient(90deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
 
       .nav-link {
-        color: @primary-color;
+        color: var(--primary-color);
       }
 
       &::before {
         content: '';
         position: absolute;
         left: 0;
-        top: 0;
-        height: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 60%;
         width: 3px;
-        background-color: @primary-color;
+        background: var(--primary-gradient);
+        border-radius: 0 3px 3px 0;
       }
     }
 
     &:hover:not(.active) {
-      background-color: @bg-hover;
+      background-color: rgba(255, 255, 255, 0.5);
+      transform: translateX(2px);
     }
   }
 
@@ -229,45 +259,53 @@ const navigateTo = (item: any) => {
     display: flex;
     align-items: center;
     padding: 12px 16px;
-    color: @text-light;
+    color: var(--text-primary);
     text-decoration: none;
-    transition: color @transition-duration ease;
+    transition: all @transition-duration ease;
 
     .nav-icon {
       width: 20px;
       height: 20px;
       flex-shrink: 0;
+      transition: all @transition-duration ease;
     }
 
     .nav-text {
       margin-left: 12px;
       font-size: 14px;
       white-space: nowrap;
+      font-weight: 500;
+    }
+
+    &:hover .nav-icon {
+      transform: scale(1.1);
+      color: var(--primary-color);
     }
   }
 }
 
 // 展开/收起按钮
 .toggle-button {
-  position: absolute;
-  top: 50%;
-  right: -12px;
-  width: 24px;
-  height: 24px;
-  background-color: @primary-color;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 50%;
+  position: absolute;
+  top: 20px;
+  right: -12px;
   cursor: pointer;
-  transform: translateY(-50%);
-  color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+  color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+  transition: all @transition-duration ease;
+  z-index: 101;
 
-  svg {
-    width: 16px;
-    height: 16px;
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
   }
 }
 </style>

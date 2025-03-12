@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习乐 - 在线教育平台</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#6366f1',
+                            DEFAULT: '#4f46e5',
+                            dark: '#4338ca',
+                        },
+                        secondary: {
+                            light: '#a855f7',
+                            DEFAULT: '#9333ea',
+                            dark: '#7e22ce',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans SC', 'Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+        .card-hover {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .instructor-container {
+            scrollbar-width: thin;
+            scrollbar-color: #6366f1 #f3f4f6;
+        }
+        .instructor-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        .instructor-container::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+        .instructor-container::-webkit-scrollbar-thumb {
+            background-color: #6366f1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 bg-gray-50">
+    <!-- 导航栏 -->
+    <nav class="sticky top-0 z-50 bg-white shadow-md">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2">
+                    <div class="gradient-bg w-10 h-10 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-white text-xl"></i>
+                    </div>
+                    <span class="text-xl font-bold bg-clip-text text-transparent gradient-bg">学习乐</span>
+                </div>
+                
+                <!-- 桌面导航 -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="font-medium hover:text-primary-DEFAULT transition-colors">课程</a>
+                    <a href="#" class="font-medium hover:text-primary-DEFAULT transition-colors">讲师</a>
+                    <a href="#" class="font-medium hover:text-primary-DEFAULT transition-colors">价格</a>
+                </div>
+                
+                <!-- 登录按钮 -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="#" class="px-4 py-2 rounded-lg font-medium hover:text-primary-DEFAULT transition-colors">登录</a>
+                    <a href="#" class="px-4 py-2 rounded-lg font-medium text-white gradient-bg hover:opacity-90 transition-opacity">注册</a>
+                </div>
+                
+                <!-- 移动端菜单按钮 -->
+                <div class="md:hidden">
+                    <button class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主页横幅 -->
+    <section class="gradient-bg py-16 md:py-24">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-10 md:mb-0">
+                    <h1 class="text-3xl md:text-5xl font-bold text-white leading-tight mb-4">
+                        通过在线学习释放您的潜能
+                    </h1>
+                    <p class="text-lg md:text-xl text-white opacity-90 mb-8">
+                        获取超过1,000门由行业专家教授的高质量课程，改变您的职业生涯。
+                    </p>
+                    <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                        <a href="#" class="px-6 py-3 bg-white text-primary-DEFAULT font-medium rounded-lg hover:bg-gray-100 transition-colors text-center">
+                            探索课程
+                        </a>
+                        <a href="#" class="px-6 py-3 bg-transparent border-2 border-white text-white font-medium rounded-lg hover:bg-white hover:bg-opacity-10 transition-colors text-center">
+                            免费试用
+                        </a>
+                    </div>
+                </div>
+                <div class="md:w-1/2 flex justify-center">
+                    <img src="/placeholder.svg?height=400&width=500" alt="学生在线学习" class="rounded-lg shadow-xl max-w-full h-auto">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 课程展示 -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-4">精选课程</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">
+                    发现我们最受欢迎的课程，这些课程旨在帮助您获取市场需求的技能并推进您的职业发展。
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- 课程卡片 1 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="/placeholder.svg?height=200&width=400" alt="网页开发课程" class="w-full h-48 object-cover">
+                        <span class="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                            初级
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">网页开发基础</h3>
+                        <p class="text-gray-600 mb-4">
+                            学习HTML、CSS和JavaScript，从零开始构建响应式网站。
+                        </p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-primary-DEFAULT font-bold">¥349</span>
+                            <div class="flex items-center">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                                <span class="text-gray-600 ml-2">4.5 (128)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 课程卡片 2 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="/placeholder.svg?height=200&width=400" alt="数据科学课程" class="w-full h-48 object-cover">
+                        <span class="absolute top-4 right-4 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                            中级
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">数据科学与机器学习</h3>
+                        <p class="text-gray-600 mb-4">
+                            掌握数据分析、可视化和机器学习算法。
+                        </p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-primary-DEFAULT font-bold">¥499</span>
+                            <div class="flex items-center">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span class="text-gray-600 ml-2">5.0 (96)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 课程卡片 3 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="/placeholder.svg?height=200&width=400" alt="用户体验设计课程" class="w-full h-48 object-cover">
+                        <span class="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                            高级
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">UX/UI设计大师班</h3>
+                        <p class="text-gray-600 mb-4">
+                            使用高级设计原则创建令人惊叹的用户界面并改善用户体验。
+                        </p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-primary-DEFAULT font-bold">¥599</span>
+                            <div class="flex items-center">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                </div>
+                                <span class="text-gray-600 ml-2">4.0 (75)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-10">
+                <a href="#" class="px-6 py-3 gradient-bg text-white font-medium rounded-lg hover:opacity-90 transition-opacity inline-block">
+                    查看所有课程
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 讲师展示 -->
+    <section class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-4">认识我们的专家讲师</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">
+                    向在各自领域拥有多年经验的行业专业人士学习。
+                </p>
+            </div>
+            
+            <div class="instructor-container overflow-x-auto pb-4">
+                <div class="flex space-x-6 min-w-max">
+                    <!-- 讲师 1 -->
+                    <div class="w-64 bg-white rounded-xl shadow-md overflow-hidden card-hover">
+                        <img src="/placeholder.svg?height=200&width=200" alt="讲师 1" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-lg font-bold mb-1">李明博士</h3>
+                            <p class="text-primary-DEFAULT text-sm mb-2">数据科学专家</p>
+                            <p class="text-gray-600 text-sm">
+                                前谷歌数据科学家，拥有10年以上机器学习和人工智能经验。
+                            </p>
+                            <div class="flex mt-4 space-x-2">
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fab fa-linkedin"></i></a>
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fab fa-twitter"></i></a>
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fas fa-globe"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 讲师 2 -->
+                    <div class="w-64 bg-white rounded-xl shadow-md overflow-hidden card-hover">
+                        <img src="/placeholder.svg?height=200&width=200" alt="讲师 2" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-lg font-bold mb-1">张伟</h3>
+                            <p class="text-primary-DEFAULT text-sm mb-2">全栈开发工程师</p>
+                            <p class="text-gray-600 text-sm">
+                                亚马逊高级开发人员，精通React、Node.js和云架构。
+                            </p>
+                            <div class="flex mt-4 space-x-2">
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fab fa-github"></i></a>
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fab fa-linkedin"></i></a>
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fas fa-globe"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 讲师 3 -->
+                    <div class="w-64 bg-white rounded-xl shadow-md overflow-hidden card-hover">
+                        <img src="/placeholder.svg?height=200&width=200" alt="讲师 3" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-lg font-bold mb-1">王丽</h3>
+                            <p class="text-primary-DEFAULT text-sm mb-2">UX/UI设计师</p>
+                            <p class="text-gray-600 text-sm">
+                                获奖设计师，曾与财富500强公司合作改善用户体验。
+                            </p>
+                            <div class="flex mt-4 space-x-2">
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fab fa-dribbble"></i></a>
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fab fa-behance"></i></a>
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fab fa-instagram"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 讲师 4 -->
+                    <div class="w-64 bg-white rounded-xl shadow-md overflow-hidden card-hover">
+                        <img src="/placeholder.svg?height=200&width=200" alt="讲师 4" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-lg font-bold mb-1">陈强</h3>
+                            <p class="text-primary-DEFAULT text-sm mb-2">数字营销专家</p>
+                            <p class="text-gray-600 text-sm">
+                                营销顾问，通过数字策略帮助初创企业实现200%以上的增长。
+                            </p>
+                            <div class="flex mt-4 space-x-2">
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fab fa-linkedin"></i></a>
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fab fa-twitter"></i></a>
+                                <a href="#" class="text-gray-500 hover:text-primary-DEFAULT"><i class="fas fa-globe"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 价格方案 -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-4">选择您的学习计划</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">
+                    灵活的价格选项，旨在满足您的学习需求和预算。
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- 免费方案 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover border border-gray-200">
+                    <div class="p-8">
+                        <h3 class="text-xl font-bold mb-4 text-center">免费</h3>
+                        <div class="text-center mb-6">
+                            <span class="text-4xl font-bold">¥0</span>
+                            <span class="text-gray-600">/月</span>
+                        </div>
+                        <ul class="space-y-3 mb-8">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>访问5门免费课程</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>基础课程材料</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>课程完成证书</span>
+                            </li>
+                            <li class="flex items-center text-gray-400">
+                                <i class="fas fa-times text-red-500 mr-2"></i>
+                                <span>讲师问答访问</span>
+                            </li>
+                            <li class="flex items-center text-gray-400">
+                                <i class="fas fa-times text-red-500 mr-2"></i>
+                                <span>可下载资源</span>
+                            </li>
+                        </ul>
+                        <a href="#" class="block w-full py-3 px-6 text-center border-2 border-primary-DEFAULT text-primary-DEFAULT font-medium rounded-lg hover:bg-primary-DEFAULT hover:text-white transition-colors">
+                            开始使用
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 标准方案（推荐） -->
+                <div class="bg-white rounded-xl shadow-xl overflow-hidden card-hover border-2 border-primary-DEFAULT transform scale-105 z-10">
+                    <div class="bg-primary-DEFAULT text-white text-center py-2 text-sm font-bold">
+                        推荐
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-xl font-bold mb-4 text-center">标准</h3>
+                        <div class="text-center mb-6">
+                            <span class="text-4xl font-bold">¥129</span>
+                            <span class="text-gray-600">/月</span>
+                        </div>
+                        <ul class="space-y-3 mb-8">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>访问50+门课程</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>所有课程材料</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>课程完成证书</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>讲师问答访问</span>
+                            </li>
+                            <li class="flex items-center text-gray-400">
+                                <i class="fas fa-times text-red-500 mr-2"></i>
+                                <span>可下载资源</span>
+                            </li>
+                        </ul>
+                        <a href="#" class="block w-full py-3 px-6 text-center text-white gradient-bg font-medium rounded-lg hover:opacity-90 transition-opacity">
+                            开始使用
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 高级方案 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover border border-gray-200">
+                    <div class="p-8">
+                        <h3 class="text-xl font-bold mb-4 text-center">高级</h3>
+                        <div class="text-center mb-6">
+                            <span class="text-4xl font-bold">¥259</span>
+                            <span class="text-gray-600">/月</span>
+                        </div>
+                        <ul class="space-y-3 mb-8">
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>访问所有1,000+门课程</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>所有课程材料</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>课程完成证书</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>讲师问答访问</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                <span>可下载资源</span>
+                            </li>
+                        </ul>
+                        <a href="#" class="block w-full py-3 px-6 text-center border-2 border-secondary-DEFAULT text-secondary-DEFAULT font-medium rounded-lg hover:bg-secondary-DEFAULT hover:text-white transition-colors">
+                            开始使用
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 行动召唤 -->
+    <section class="gradient-bg py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl font-bold text-white mb-6">准备好开始您的学习之旅了吗？</h2>
+            <p class="text-white text-lg opacity-90 mb-8 max-w-2xl mx-auto">
+                加入已经在学习乐平台上学习和成长的数千名学生。今天就开始您的旅程！
+            </p>
+            <a href="#" class="px-8 py-4 bg-white text-primary-DEFAULT font-medium rounded-lg hover:bg-gray-100 transition-colors inline-block">
+                免费注册
+            </a>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-6">
+                        <div class="gradient-bg w-10 h-10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white text-xl"></i>
+                        </div>
+                        <span class="text-xl font-bold">学习乐</span>
+                    </div>
+                    <p class="text-gray-400 mb-6">
+                        通过高质量、易获取的在线教育赋能个人。
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-weixin"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-weibo"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-qq"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-bilibili"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold mb-6">快速链接</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">首页</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">课程</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">讲师</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">价格</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">博客</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold mb-6">课程分类</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">网页开发</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">数据科学</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">UX/UI设计</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">数字营销</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">商业管理</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold mb-6">联系我们</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-map-marker-alt mt-1 mr-3 text-primary-light"></i>
+                            <span class="text-gray-400">北京市海淀区学习路123号，100001</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-envelope mt-1 mr-3 text-primary-light"></i>
+                            <span class="text-gray-400">support@xuexile.com</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-phone-alt mt-1 mr-3 text-primary-light"></i>
+                            <span class="text-gray-400">+86 (010) 1234-5678</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+                <p>&copy; 2023 学习乐. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 移动端菜单（默认隐藏） -->
+    <div id="mobile-menu" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden">
+        <div class="bg-white h-full w-64 shadow-xl p-5">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center space-x-2">
+                    <div class="gradient-bg w-8 h-8 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <span class="text-lg font-bold bg-clip-text text-transparent gradient-bg">学习乐</span>
+                </div>
+                <button id="close-menu" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <nav>
+                <ul class="space-y-4">
+                    <li><a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">课程</a></li>
+                    <li><a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">讲师</a></li>
+                    <li><a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">价格</a></li>
+                    <li><a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">登录</a></li>
+                    <li><a href="#" class="block py-2 px-4 gradient-bg text-white rounded-lg">注册</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 移动端菜单切换的JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuButton = document.querySelector('.md\\:hidden button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const closeButton = document.getElementById('close-menu');
+            
+            menuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            closeButton.addEventListener('click', function() {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>

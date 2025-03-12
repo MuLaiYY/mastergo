@@ -178,108 +178,216 @@ const goBack = () => {
 
 <style scoped lang="less">
 .new-project-container {
-  padding: 32px;
+  padding: 2rem;
   max-width: 800px;
   margin: 0 auto;
+  position: relative;
+  color: rgba(76, 29, 149, 0.85);
+  font-family: 'Inter', system-ui, sans-serif;
+
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+      radial-gradient(circle at 15% 15%, rgba(167, 139, 250, 0.08) 0%, transparent 35%),
+      radial-gradient(circle at 85% 85%, rgba(244, 114, 182, 0.08) 0%, transparent 35%),
+      radial-gradient(circle at 50% 50%, rgba(196, 181, 253, 0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: -1;
+  }
 }
 
 .page-title {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 24px;
-  color: #1f2937;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 40%;
+    height: 3px;
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.8), rgba(236, 72, 153, 0.2));
+    border-radius: 3px;
+  }
 }
 
 .project-form {
-  background-color: white;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+  padding: 1.5rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 4px 24px -2px rgba(139, 92, 246, 0.08),
+    0 0 0 1px rgba(139, 92, 246, 0.03);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    padding: 1px;
+    background: linear-gradient(135deg,
+      rgba(139, 92, 246, 0.3),
+      rgba(236, 72, 153, 0.3),
+      rgba(139, 92, 246, 0.1)
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
 
   label {
     display: block;
-    font-weight: 500;
-    margin-bottom: 8px;
-    color: #374151;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: rgba(76, 29, 149, 0.9);
+    font-size: 0.95rem;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   input, textarea {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 14px;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: 16px;
+    font-size: 0.95rem;
+    color: rgba(76, 29, 149, 0.9);
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+
+    &::placeholder {
+      color: rgba(107, 114, 128, 0.5);
+    }
+
+    &:hover {
+      border-color: rgba(139, 92, 246, 0.3);
+      background: rgba(255, 255, 255, 0.6);
+    }
 
     &:focus {
       outline: none;
-      border-color: #8b5cf6;
-      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+      border-color: rgba(139, 92, 246, 0.5);
+      background: rgba(255, 255, 255, 0.7);
+      box-shadow:
+        0 0 0 3px rgba(139, 92, 246, 0.1),
+        0 4px 12px -2px rgba(139, 92, 246, 0.08);
     }
 
     &.error {
-      border-color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.5);
+      box-shadow:
+        0 0 0 3px rgba(239, 68, 68, 0.1),
+        0 4px 12px -2px rgba(239, 68, 68, 0.08);
     }
   }
 
+  textarea {
+    min-height: 80px;
+    resize: vertical;
+    line-height: 1.6;
+  }
+
   .error-message {
-    color: #ef4444;
-    font-size: 12px;
-    margin-top: 4px;
+    color: rgba(239, 68, 68, 0.9);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
     display: block;
   }
 }
 
 .project-types {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
 
   .project-type-card {
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 16px;
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(139, 92, 246, 0.08);
+    border-radius: 16px;
+    padding: 1.25rem;
     cursor: pointer;
     display: flex;
     align-items: flex-start;
-    transition: all 0.2s ease;
+    gap: 1rem;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
 
     &:hover {
-      border-color: #8b5cf6;
-      background-color: #f9fafb;
+      background: rgba(255, 255, 255, 0.4);
+      border-color: rgba(139, 92, 246, 0.15);
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 16px -4px rgba(139, 92, 246, 0.08),
+        0 0 0 1px rgba(139, 92, 246, 0.05);
     }
 
     &.selected {
-      border-color: #8b5cf6;
-      background-color: rgba(139, 92, 246, 0.05);
-      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+      background: rgba(139, 92, 246, 0.05);
+      border-color: rgba(139, 92, 246, 0.3);
+      box-shadow:
+        0 8px 16px -4px rgba(139, 92, 246, 0.12),
+        0 0 0 1px rgba(139, 92, 246, 0.1);
+
+      .icon {
+        transform: scale(1.1);
+      }
+
+      h3 {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 1), rgba(236, 72, 153, 1));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
     }
 
     .icon {
-      color: #8b5cf6;
-      margin-right: 12px;
-
-      svg {
-        width: 24px;
-        height: 24px;
-      }
+      width: 2rem;
+      height: 2rem;
+      transition: transform 0.3s ease;
     }
 
     .type-info {
+      flex: 1;
+
       h3 {
-        font-size: 16px;
-        font-weight: 500;
-        margin: 0 0 4px 0;
-        color: #1f2937;
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0 0 0.25rem;
+        color: rgba(76, 29, 149, 0.9);
+        transition: all 0.3s ease;
       }
 
       p {
-        font-size: 14px;
-        color: #6b7280;
+        font-size: 0.85rem;
+        color: rgba(107, 114, 128, 0.8);
         margin: 0;
+        line-height: 1.5;
       }
     }
   }
@@ -288,39 +396,87 @@ const goBack = () => {
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
 
   button {
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 0.95rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
 
     &.cancel-button {
-      background-color: white;
-      border: 1px solid #d1d5db;
-      color: #6b7280;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(139, 92, 246, 0.15);
+      color: rgba(76, 29, 149, 0.8);
 
       &:hover {
-        background-color: #f9fafb;
+        border-color: rgba(139, 92, 246, 0.3);
+        transform: translateY(-1px);
+        box-shadow:
+          0 4px 12px -2px rgba(139, 92, 246, 0.1),
+          0 0 0 1px rgba(139, 92, 246, 0.1);
       }
     }
 
     &.create-button {
-      background-color: #8b5cf6;
-      border: 1px solid #8b5cf6;
+      background: linear-gradient(135deg,
+        rgba(139, 92, 246, 0.9),
+        rgba(236, 72, 153, 0.9)
+      );
       color: white;
+      border: none;
+      box-shadow:
+        0 4px 12px -2px rgba(139, 92, 246, 0.3),
+        0 0 0 1px rgba(139, 92, 246, 0.1);
 
-      &:hover {
-        background-color: #7c3aed;
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow:
+          0 8px 16px -4px rgba(139, 92, 246, 0.4),
+          0 0 0 1px rgba(139, 92, 246, 0.15);
+        background: linear-gradient(135deg,
+          rgba(139, 92, 246, 1),
+          rgba(236, 72, 153, 1)
+        );
       }
 
       &:disabled {
         opacity: 0.7;
         cursor: not-allowed;
       }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .new-project-container {
+    padding: 1.5rem;
+  }
+
+  .page-title {
+    font-size: 1.8rem;
+  }
+
+  .project-form {
+    padding: 1.5rem;
+  }
+
+  .project-types {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+
+    button {
+      width: 100%;
     }
   }
 }

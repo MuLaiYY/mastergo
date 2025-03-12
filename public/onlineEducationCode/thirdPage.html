@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网页开发基础 - 课程详情 - 学习乐</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#6366f1',
+                            DEFAULT: '#4f46e5',
+                            dark: '#4338ca',
+                        },
+                        secondary: {
+                            light: '#a855f7',
+                            DEFAULT: '#9333ea',
+                            dark: '#7e22ce',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans SC', 'Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+        .card-hover {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 bg-gray-50">
+    <!-- 导航栏 -->
+    <nav class="sticky top-0 z-50 bg-white shadow-md">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2">
+                    <div class="gradient-bg w-10 h-10 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-white text-xl"></i>
+                    </div>
+                    <span class="text-xl font-bold bg-clip-text text-transparent gradient-bg">学习乐</span>
+                </div>
+                
+                <!-- 桌面导航 -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="font-medium hover:text-primary-DEFAULT transition-colors">首页</a>
+                    <a href="courses.html" class="font-medium text-primary-DEFAULT transition-colors">课程</a>
+                    <a href="#" class="font-medium hover:text-primary-DEFAULT transition-colors">讲师</a>
+                    <a href="#" class="font-medium hover:text-primary-DEFAULT transition-colors">价格</a>
+                </div>
+                
+                <!-- 登录按钮 -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="#" class="px-4 py-2 rounded-lg font-medium hover:text-primary-DEFAULT transition-colors">登录</a>
+                    <a href="#" class="px-4 py-2 rounded-lg font-medium text-white gradient-bg hover:opacity-90 transition-opacity">注册</a>
+                </div>
+                
+                <!-- 移动端菜单按钮 -->
+                <div class="md:hidden">
+                    <button class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 面包屑导航 -->
+    <div class="bg-white border-b">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center text-sm text-gray-600">
+                <a href="index.html" class="hover:text-primary-DEFAULT">首页</a>
+                <span class="mx-2">/</span>
+                <a href="courses.html" class="hover:text-primary-DEFAULT">课程</a>
+                <span class="mx-2">/</span>
+                <span class="text-gray-800 font-medium">网页开发基础</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 课程头部信息 -->
+    <section class="bg-white py-8 md:py-12">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- 左侧课程图片 -->
+                <div class="lg:w-2/5">
+                    <div class="relative rounded-xl overflow-hidden shadow-lg">
+                        <img src="/placeholder.svg?height=400&width=600" alt="网页开发基础课程" class="w-full h-auto">
+                        <span class="absolute top-4 right-4 bg-green-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                            初级
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- 右侧课程信息 -->
+                <div class="lg:w-3/5">
+                    <h1 class="text-3xl font-bold mb-4">网页开发基础</h1>
+                    
+                    <p class="text-lg text-gray-700 mb-6">
+                        从零开始学习HTML、CSS和JavaScript，掌握构建现代响应式网站的基本技能。
+                    </p>
+                    
+                    <div class="flex items-center mb-6">
+                        <div class="flex text-yellow-400 mr-2">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <span class="text-gray-600">4.5 (128 评价)</span>
+                        <span class="mx-3 text-gray-400">|</span>
+                        <span class="text-gray-600"><i class="fas fa-user-graduate mr-1"></i> 1,245 名学生</span>
+                        <span class="mx-3 text-gray-400">|</span>
+                        <span class="text-gray-600"><i class="fas fa-clock mr-1"></i> 最近更新于 2023年8月</span>
+                    </div>
+                    
+                    <div class="flex items-center mb-6">
+                        <img src="/placeholder.svg?height=50&width=50" alt="讲师头像" class="w-12 h-12 rounded-full mr-3">
+                        <div>
+                            <p class="font-medium">讲师: <a href="#" class="text-primary-DEFAULT hover:underline">张伟</a></p>
+                            <p class="text-sm text-gray-600">全栈开发工程师 | 5年教学经验</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-6 mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="text-3xl font-bold text-primary-DEFAULT">¥349</div>
+                            <div class="text-lg text-gray-500 line-through">¥499</div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <a href="#" class="block w-full py-3 px-6 text-center text-white gradient-bg font-medium rounded-lg hover:opacity-90 transition-opacity">
+                                立即购买
+                            </a>
+                            <a href="#" class="block w-full py-3 px-6 text-center border-2 border-primary-DEFAULT text-primary-DEFAULT font-medium rounded-lg hover:bg-primary-DEFAULT hover:text-white transition-colors">
+                                加入购物车
+                            </a>
+                        </div>
+                        
+                        <p class="text-center text-sm text-gray-600 mt-4">
+                            30天退款保证 | 终身访问
+                        </p>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-video text-gray-500 mr-2"></i>
+                            <span>42 个视频课程</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-clock text-gray-500 mr-2"></i>
+                            <span>总时长 12 小时</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-download text-gray-500 mr-2"></i>
+                            <span>25 个可下载资源</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-infinity text-gray-500 mr-2"></i>
+                            <span>终身访问</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-mobile-alt text-gray-500 mr-2"></i>
+                            <span>移动端和电视端访问</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-certificate text-gray-500 mr-2"></i>
+                            <span>完成证书</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 课程内容标签页 -->
+    <section class="bg-white border-t">
+        <div class="container mx-auto px-4">
+            <div class="flex overflow-x-auto border-b">
+                <button class="px-6 py-4 font-medium text-primary-DEFAULT border-b-2 border-primary-DEFAULT">
+                    课程概述
+                </button>
+                <button class="px-6 py-4 font-medium text-gray-600 hover:text-primary-DEFAULT">
+                    课程大纲
+                </button>
+                <button class="px-6 py-4 font-medium text-gray-600 hover:text-primary-DEFAULT">
+                    讲师介绍
+                </button>
+                <button class="px-6 py-4 font-medium text-gray-600 hover:text-primary-DEFAULT">
+                    学生评价
+                </button>
+                <button class="px-6 py-4 font-medium text-gray-600 hover:text-primary-DEFAULT">
+                    常见问题
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 课程概述内容 -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- 左侧主要内容 -->
+                <div class="lg:col-span-2">
+                    <div class="mb-10">
+                        <h2 class="text-2xl font-bold mb-6">课程介绍</h2>
+                        <div class="space-y-4 text-gray-700">
+                            <p>
+                                在这门全面的网页开发基础课程中，您将从零开始学习构建现代、响应式网站所需的所有基本技能。无论您是完全的初学者，还是想要巩固基础知识的开发者，本课程都将为您提供坚实的基础。
+                            </p>
+                            <p>
+                                通过实践项目和互动练习，您将学习HTML、CSS和JavaScript的核心概念，这些是所有网页开发的基石。课程采用循序渐进的方法，确保您在进入更复杂的主题之前掌握基础知识。
+                            </p>
+                            <p>
+                                完成本课程后，您将能够独立构建响应式网站，理解现代网页开发的工作流程，并为学习更高级的框架和技术做好准备。
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-10">
+                        <h2 class="text-2xl font-bold mb-6">您将学到什么</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <span>掌握HTML5语义化标签和结构</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <span>使用CSS3创建现代化的页面样式</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <span>理解CSS盒模型和布局技术</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <span>使用Flexbox和Grid创建复杂布局</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <span>掌握JavaScript基础和DOM操作</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <span>实现表单验证和用户交互</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <span>创建响应式设计适配各种设备</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <span>使用Git进行版本控制</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <span>部署网站到线上服务器</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <span>掌握网页性能优化基础</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-10">
+                        <h2 class="text-2xl font-bold mb-6">适合人群</h2>
+                        <div class="space-y-3">
+                            <div class="flex items-start">
+                                <i class="fas fa-user text-primary-DEFAULT mt-1 mr-3"></i>
+                                <span>零基础想要学习网页开发的初学者</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-user text-primary-DEFAULT mt-1 mr-3"></i>
+                                <span>想要巩固前端开发基础知识的开发者</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-user text-primary-DEFAULT mt-1 mr-3"></i>
+                                <span>希望转行到网页开发领域的职场人士</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-user text-primary-DEFAULT mt-1 mr-3"></i>
+                                <span>需要建立自己网站的创业者和小企业主</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-user text-primary-DEFAULT mt-1 mr-3"></i>
+                                <span>对网页技术感兴趣的学生和爱好者</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h2 class="text-2xl font-bold mb-6">课程项目</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-gray-100 rounded-lg overflow-hidden">
+                                <img src="/placeholder.svg?height=200&width=400" alt="个人作品集网站" class="w-full h-48 object-cover">
+                                <div class="p-4">
+                                    <h3 class="font-bold mb-2">个人作品集网站</h3>
+                                    <p class="text-gray-700 text-sm">创建一个展示您技能和项目的响应式个人作品集网站。</p>
+                                </div>
+                            </div>
+                            <div class="bg-gray-100 rounded-lg overflow-hidden">
+                                <img src="/placeholder.svg?height=200&width=400" alt="电子商务网站" class="w-full h-48 object-cover">
+                                <div class="p-4">
+                                    <h3 class="font-bold mb-2">电子商务网站</h3>
+                                    <p class="text-gray-700 text-sm">构建一个包含产品展示、购物车和结账流程的电子商务网站前端。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧课程大纲预览 -->
+                <div>
+                    <div class="bg-gray-100 rounded-lg p-6">
+                        <h2 class="text-xl font-bold mb-4">课程大纲预览</h2>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-medium">第1章：HTML基础</h3>
+                                    <span class="text-sm text-gray-600">5 课时</span>
+                                </div>
+                                <ul class="text-sm text-gray-700 space-y-2 pl-6">
+                                    <li class="flex items-center">
+                                        <i class="fas fa-play-circle text-primary-DEFAULT mr-2"></i>
+                                        <span>HTML简介和开发环境设置</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-play-circle text-primary-DEFAULT mr-2"></i>
+                                        <span>HTML文档结构和元素</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-lock text-gray-400 mr-2"></i>
+                                        <span class="text-gray-500">文本格式化和链接</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-medium">第2章：CSS样式</h3>
+                                    <span class="text-sm text-gray-600">8 课时</span>
+                                </div>
+                                <ul class="text-sm text-gray-700 space-y-2 pl-6">
+                                    <li class="flex items-center">
+                                        <i class="fas fa-lock text-gray-400 mr-2"></i>
+                                        <span class="text-gray-500">CSS简介和选择器</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-lock text-gray-400 mr-2"></i>
+                                        <span class="text-gray-500">盒模型和布局基础</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-medium">第3章：响应式设计</h3>
+                                    <span class="text-sm text-gray-600">6 课时</span>
+                                </div>
+                                <ul class="text-sm text-gray-700 space-y-2 pl-6">
+                                    <li class="flex items-center">
+                                        <i class="fas fa-lock text-gray-400 mr-2"></i>
+                                        <span class="text-gray-500">媒体查询基础</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-medium">第4章：JavaScript基础</h3>
+                                    <span class="text-sm text-gray-600">10 课时</span>
+                                </div>
+                                <ul class="text-sm text-gray-700 space-y-2 pl-6">
+                                    <li class="flex items-center">
+                                        <i class="fas fa-lock text-gray-400 mr-2"></i>
+                                        <span class="text-gray-500">JavaScript简介和语法</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <a href="#" class="text-primary-DEFAULT hover:underline flex items-center justify-center">
+                                查看完整课程大纲 <i class="fas fa-chevron-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 相关课程推荐 -->
+    <section class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-2xl font-bold mb-8">相关课程推荐</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- 相关课程 1 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="/placeholder.svg?height=200&width=400" alt="JavaScript进阶课程" class="w-full h-48 object-cover">
+                        <span class="absolute top-4 right-4 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                            中级
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">JavaScript进阶与ES6+</h3>
+                        <p class="text-gray-600 mb-4">
+                            深入学习JavaScript高级特性和ES6+新语法，提升代码质量。
+                        </p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-primary-DEFAULT font-bold">¥399</span>
+                            <div class="flex items-center">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                                <span class="text-gray-600 ml-2">4.7 (98)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 相关课程 2 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="/placeholder.svg?height=200&width=400" alt="响应式网页设计" class="w-full h-48 object-cover">
+                        <span class="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                            初级
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">响应式网页设计精通</h3>
+                        <p class="text-gray-600 mb-4">
+                            学习创建在任何设备上都完美显示的现代响应式网站。
+                        </p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-primary-DEFAULT font-bold">¥329</span>
+                            <div class="flex items-center">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span class="text-gray-600 ml-2">4.9 (112)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 相关课程 3 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="/placeholder.svg?height=200&width=400" alt="React前端开发" class="w-full h-48 object-cover">
+                        <span class="absolute top-4 right-4 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                            中级
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">React前端开发实战</h3>
+                        <p class="text-gray-600 mb-4">
+                            使用React框架构建现代化、高性能的单页面应用。
+                        </p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-primary-DEFAULT font-bold">¥459</span>
+                            <div class="flex items-center">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                </div>
+                                <span class="text-gray-600 ml-2">4.2 (86)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 相关课程 4 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="/placeholder.svg?height=200&width=400" alt="网站性能优化" class="w-full h-48 object-cover">
+                        <span class="  alt="网站性能优化" class="w-full h-48 object-cover">
+                        <span class="absolute top-4 right-4 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                            中级
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">网站性能优化技巧</h3>
+                        <p class="text-gray-600 mb-4">
+                            学习提高网站加载速度和用户体验的关键优化技术。
+                        </p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-primary-DEFAULT font-bold">¥379</span>
+                            <div class="flex items-center">
+                                <div class="flex text-yellow-400">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                                <span class="text-gray-600 ml-2">4.6 (74)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 常见问题 -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-2xl font-bold mb-8">常见问题</h2>
+            
+            <div class="max-w-3xl mx-auto space-y-6">
+                <div class="border border-gray-200 rounded-lg">
+                    <button class="flex justify-between items-center w-full px-6 py-4 text-left font-medium focus:outline-none">
+                        <span>这门课程需要什么前置知识？</span>
+                        <i class="fas fa-chevron-down text-gray-500"></i>
+                    </button>
+                    <div class="px-6 pb-4">
+                        <p class="text-gray-700">
+                            本课程专为初学者设计，不需要任何编程或网页开发的前置知识。只需要基本的计算机操作能力和学习热情即可。如果您已经有一些HTML或CSS的基础，您仍然可以从本课程中学到很多新知识和最佳实践。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="border border-gray-200 rounded-lg">
+                    <button class="flex justify-between items-center w-full px-6 py-4 text-left font-medium focus:outline-none">
+                        <span>完成课程后我能达到什么水平？</span>
+                        <i class="fas fa-chevron-down text-gray-500"></i>
+                    </button>
+                    <div class="px-6 pb-4">
+                        <p class="text-gray-700">
+                            完成本课程后，您将能够独立构建响应式网站，理解HTML、CSS和JavaScript的核心概念，并能够实现常见的网页交互功能。您将具备前端开发的基础技能，可以开始承接简单的网站项目，或继续学习更高级的前端框架如React、Vue等。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="border border-gray-200 rounded-lg">
+                    <button class="flex justify-between items-center w-full px-6 py-4 text-left font-medium focus:outline-none">
+                        <span>课程内容会定期更新吗？</span>
+                        <i class="fas fa-chevron-down text-gray-500"></i>
+                    </button>
+                    <div class="px-6 pb-4">
+                        <p class="text-gray-700">
+                            是的，我们定期更新课程内容以确保与行业最新标准和技术保持同步。购买课程后，您将终身获得所有更新，无需额外付费。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="border border-gray-200 rounded-lg">
+                    <button class="flex justify-between items-center w-full px-6 py-4 text-left font-medium focus:outline-none">
+                        <span>如果我有问题，可以获得帮助吗？</span>
+                        <i class="fas fa-chevron-down text-gray-500"></i>
+                    </button>
+                    <div class="px-6 pb-4">
+                        <p class="text-gray-700">
+                            当然可以。每个课程章节下方都有讨论区，您可以在那里提问并获得讲师或其他学生的回答。此外，我们还提供专门的学习社群，您可以在那里与其他学习者交流经验，分享项目。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="border border-gray-200 rounded-lg">
+                    <button class="flex justify-between items-center w-full px-6 py-4 text-left font-medium focus:outline-none">
+                        <span>我可以在手机上学习这门课程吗？</span>
+                        <i class="fas fa-chevron-down text-gray-500"></i>
+                    </button>
+                    <div class="px-6 pb-4">
+                        <p class="text-gray-700">
+                            可以，我们的课程平台支持移动设备访问，您可以在手机或平板电脑上观看视频课程。不过，对于实际的编码练习，我们建议使用电脑，这样可以获得更好的开发体验。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 行动召唤 -->
+    <section class="gradient-bg py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl font-bold text-white mb-6">准备好开始您的网页开发之旅了吗？</h2>
+            <p class="text-white text-lg opacity-90 mb-8 max-w-2xl mx-auto">
+                加入超过1,200名学生的行列，开始构建您的第一个专业网站！
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <a href="#" class="px-8 py-4 bg-white text-primary-DEFAULT font-medium rounded-lg hover:bg-gray-100 transition-colors inline-block">
+                    立即购买
+                </a>
+                <a href="#" class="px-8 py-4 bg-transparent border-2 border-white text-white font-medium rounded-lg hover:bg-white hover:bg-opacity-10 transition-colors inline-block">
+                    免费试学
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-6">
+                        <div class="gradient-bg w-10 h-10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white text-xl"></i>
+                        </div>
+                        <span class="text-xl font-bold">学习乐</span>
+                    </div>
+                    <p class="text-gray-400 mb-6">
+                        通过高质量、易获取的在线教育赋能个人。
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-weixin"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-weibo"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-qq"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-bilibili"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold mb-6">快速链接</h3>
+                    <ul class="space-y-3">
+                        <li><a href="index.html" class="text-gray-400 hover:text-white transition-colors">首页</a></li>
+                        <li><a href="courses.html" class="text-gray-400 hover:text-white transition-colors">课程</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">讲师</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">价格</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">博客</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold mb-6">课程分类</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">网页开发</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">数据科学</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">UX/UI设计</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">数字营销</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">商业管理</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold mb-6">联系我们</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-map-marker-alt mt-1 mr-3 text-primary-light"></i>
+                            <span class="text-gray-400">北京市海淀区学习路123号，100001</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-envelope mt-1 mr-3 text-primary-light"></i>
+                            <span class="text-gray-400">support@xuexile.com</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-phone-alt mt-1 mr-3 text-primary-light"></i>
+                            <span class="text-gray-400">+86 (010) 1234-5678</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+                <p>&copy; 2023 学习乐. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 移动端菜单（默认隐藏） -->
+    <div id="mobile-menu" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden">
+        <div class="bg-white h-full w-64 shadow-xl p-5">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center space-x-2">
+                    <div class="gradient-bg w-8 h-8 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <span class="text-lg font-bold bg-clip-text text-transparent gradient-bg">学习乐</span>
+                </div>
+                <button id="close-menu" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <nav>
+                <ul class="space-y-4">
+                    <li><a href="index.html" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">首页</a></li>
+                    <li><a href="courses.html" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">课程</a></li>
+                    <li><a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">讲师</a></li>
+                    <li><a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">价格</a></li>
+                    <li><a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">登录</a></li>
+                    <li><a href="#" class="block py-2 px-4 gradient-bg text-white rounded-lg">注册</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 移动端菜单切换的JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuButton = document.querySelector('.md\\:hidden button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const closeButton = document.getElementById('close-menu');
+            
+            menuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            closeButton.addEventListener('click', function() {
+                mobileMenu.classList.add('hidden');
+            });
+
+            // 常见问题折叠功能
+            const faqButtons = document.querySelectorAll('.border.border-gray-200 button');
+            faqButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const icon = this.querySelector('i');
+                    
+                    if (content.style.display === 'none' || content.style.display === '') {
+                        content.style.display = 'block';
+                        icon.classList.remove('fa-chevron-down');
+                        icon.classList.add('fa-chevron-up');
+                    } else {
+                        content.style.display = 'none';
+                        icon.classList.remove('fa-chevron-up');
+                        icon.classList.add('fa-chevron-down');
+                    }
+                });
+            });
+
+            // 标签页切换功能
+            const tabButtons = document.querySelectorAll('.flex.overflow-x-auto button');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('text-primary-DEFAULT', 'border-b-2', 'border-primary-DEFAULT');
+                        btn.classList.add('text-gray-600');
+                    });
+                    
+                    this.classList.remove('text-gray-600');
+                    this.classList.add('text-primary-DEFAULT', 'border-b-2', 'border-primary-DEFAULT');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
