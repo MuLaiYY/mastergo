@@ -223,6 +223,9 @@ body{
 //是否允许选中元素
 const changeAllowSelect = () => {
   setIsAllowSelectElement(!isAllowSelectElement.value)
+  if (!isAllowSelectElement.value) {
+    isDrag.value = false
+  }
   // 清除当前高亮
   if (lastHoverElement) {
     lastHoverElement.classList.remove('special-hover-highlight')
@@ -243,7 +246,7 @@ const handleElementHover = (e) => {
   )
     return // 菜单显示时、修改属性时不更新高亮
 
-  console.log('鼠标进来了：', e.target)
+  // console.log('鼠标进来了：', e.target)
   let target
   //排除html标签
   if (e.target.tagName !== 'HTML' && e.target.tagName !== 'BODY') target = e.target
@@ -894,21 +897,25 @@ const initDrag = (iframeDocument) => {
   sortableInstances = []
 
   const body = iframeDocument.body
-  const containerDiv = iframeDocument.createElement('div')
-  containerDiv.id = 'superContainer'
+  // const containerDiv = iframeDocument.createElement('div')
+  // containerDiv.id = 'superContainer'
 
-  const bodyChildren = [...body.children]
-  bodyChildren.forEach((child) => {
-    containerDiv.appendChild(child)
-  })
+  // const bodyChildren = [...body.children]
+  // bodyChildren.forEach((child) => {
+  //   containerDiv.appendChild(child)
+  // })
 
-  body.appendChild(containerDiv)
+  // body.appendChild(containerDiv)
 
   // 创建主容器的 Sortable 实例
-  const mainSortable = new Sortable(containerDiv, {
+  const mainSortable = new Sortable(body, {
     animation: 150,
     draggable: '*',
-    group: 'shared',
+    group: {
+      name: 'root',
+      put: ['component'],
+    },
+    fallbackOnBody: true,
     onStart: function (evt) {
       isDragging.value = true
       console.log('开始拖拽时的transform', evt.item.style.transform)
@@ -918,17 +925,109 @@ const initDrag = (iframeDocument) => {
       console.log('元素交换位置:', evt.oldIndex, evt.newIndex)
       console.log('元素交换位置后的transform', evt.item.style.transform)
     },
+    onAdd: function (evt) {
+      const item = evt.item
+      if (item.classList.contains('component-item')) {
+        // 获取组件的索引
+        const index = evt.oldIndex
+        // 获取实际的模板内容
+        const tempDiv = document.createElement('div')
+        tempDiv.innerHTML = components.value[index].template.html
+        const actualElement = tempDiv.firstElementChild
+
+        // 替换放置的元素
+        item.parentNode.replaceChild(actualElement, item)
+
+        // 检查组件是否有JavaScript代码需要插入
+        if (components.value[index].template && typeof components.value[index].template === 'object' && components.value[index].template.js) {
+          // 创建一个新的script元素
+          const scriptElement = iframeDocument.createElement('script');
+          // 直接设置JavaScript代码内容
+          scriptElement.textContent = components.value[index].template.js;
+          // 添加到body中执行
+          body.appendChild(scriptElement);
+        }
+
+        // 如果新添加的元素有子元素，将其初始化为 Sortable 实例
+        if (actualElement.children.length > 0) {
+          // 生成唯一的组名
+          const uniqueIndex = `new-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+
+          const newSortable = new Sortable(actualElement, {
+            animation: 150,
+            draggable: '*',
+            group: {
+              name: `shared${uniqueIndex}`,
+              put: ['component'] // 允许接收组件库和自身的元素
+            },
+            fallbackOnBody: true,
+
+            onStart: function (evt) {
+              isDragging.value = true
+              console.log('开始拖拽时的transform', evt.item.style.transform)
+            },
+            onEnd: function (evt) {
+              isDragging.value = false
+              console.log('嵌套元素交换位置:', evt.oldIndex, evt.newIndex)
+              console.log('嵌套元素交换位置后的transform', evt.item.style.transform)
+            },
+
+            // 递归处理，当有新组件拖入时也初始化
+            onAdd: function (evt) {
+              const item = evt.item
+              if (item.classList.contains('component-item')) {
+                // 获取组件的索引
+                const index = evt.oldIndex
+                // 获取实际的模板内容
+                const tempDiv = document.createElement('div')
+                tempDiv.innerHTML = components.value[index].template.html
+                const actualElement = tempDiv.firstElementChild
+
+                // 替换放置的元素
+                item.parentNode.replaceChild(actualElement, item)
+
+                // 检查组件是否有JavaScript代码需要插入
+                if (components.value[index].template && typeof components.value[index].template === 'object' && components.value[index].template.js) {
+                  // 创建一个新的script元素
+                  const scriptElement = iframeDocument.createElement('script');
+                  // 直接设置JavaScript代码内容
+                  scriptElement.textContent = components.value[index].template.js;
+                  // 添加到body中执行
+                  body.appendChild(scriptElement);
+                }
+
+                // 递归初始化
+                if (actualElement.children.length > 0) {
+                  initElementAsSortable(actualElement)
+                }
+              }
+            }
+          })
+
+          // 将新实例添加到实例列表中
+          sortableInstances.push(newSortable)
+
+          // 递归初始化所有子元素
+          initNestedSortables(actualElement)
+        }
+      }
+    }
   })
   sortableInstances.push(mainSortable)
 
   // 为嵌套容器创建 Sortable 实例
-  const nestedContainers = containerDiv.querySelectorAll('*')
-  nestedContainers.forEach((nestedContainer) => {
+  const nestedContainers = body.querySelectorAll('*')
+  nestedContainers.forEach((nestedContainer,index) => {
     if (nestedContainer.children.length > 0) {
       const nestedSortable = new Sortable(nestedContainer, {
         animation: 150,
         draggable: '*',
-        group: 'shared',
+        group: {
+          name: `shared${index}`,
+          put: ['component'] // 允许接收组件库和自身的元素
+        },
+        fallbackOnBody:true,
+
         onStart: function (evt) {
           isDragging.value = true
 
@@ -939,11 +1038,7 @@ const initDrag = (iframeDocument) => {
           console.log('嵌套元素交换位置:', evt.oldIndex, evt.newIndex)
           console.log('嵌套元素交换位置后的transform', evt.item.style.transform)
         },
-        // onAdd: function (evt) {
-        //   console.log('元素被添加', evt)
-        //   //打印实际添加的元素
-        //   console.log('实际添加的元素', evt.item)
-        // },
+
         onAdd: function (evt) {
           const item = evt.item
           if (item.classList.contains('component-item')) {
@@ -951,15 +1046,160 @@ const initDrag = (iframeDocument) => {
             const index = evt.oldIndex
             // 获取实际的模板内容
             const tempDiv = document.createElement('div')
-            tempDiv.innerHTML = components.value[index].template
+            tempDiv.innerHTML = components.value[index].template.html
             const actualElement = tempDiv.firstElementChild
 
             // 替换放置的元素
             item.parentNode.replaceChild(actualElement, item)
+
+            // 检查组件是否有JavaScript代码需要插入
+            if (components.value[index].template && typeof components.value[index].template === 'object' && components.value[index].template.js) {
+              // 创建一个新的script元素
+              const scriptElement = iframeDocument.createElement('script');
+              // 直接设置JavaScript代码内容
+              scriptElement.textContent = components.value[index].template.js;
+              // 添加到body中执行
+              body.appendChild(scriptElement);
+            }
+
+            // 如果新添加的元素有子元素，将其初始化为 Sortable 实例
+            if (actualElement.children.length > 0) {
+              // 生成唯一的组名
+              const uniqueIndex = `new-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+
+              const newSortable = new Sortable(actualElement, {
+                animation: 150,
+                draggable: '*',
+                group: {
+                  name: `shared${uniqueIndex}`,
+                  put: ['component'] // 允许接收组件库和自身的元素
+                },
+                fallbackOnBody: true,
+
+                onStart: function (evt) {
+                  isDragging.value = true
+                  console.log('开始拖拽时的transform', evt.item.style.transform)
+                },
+                onEnd: function (evt) {
+                  isDragging.value = false
+                  console.log('嵌套元素交换位置:', evt.oldIndex, evt.newIndex)
+                  console.log('嵌套元素交换位置后的transform', evt.item.style.transform)
+                },
+
+                // 递归处理，当有新组件拖入时也初始化
+                onAdd: function (evt) {
+                  const item = evt.item
+                  if (item.classList.contains('component-item')) {
+                    // 获取组件的索引
+                    const index = evt.oldIndex
+                    // 获取实际的模板内容
+                    const tempDiv = document.createElement('div')
+                    tempDiv.innerHTML = components.value[index].template.html
+                    const actualElement = tempDiv.firstElementChild
+
+                    // 替换放置的元素
+                    item.parentNode.replaceChild(actualElement, item)
+
+                    // 检查组件是否有JavaScript代码需要插入
+                    if (components.value[index].template && typeof components.value[index].template === 'object' && components.value[index].template.js) {
+                      // 创建一个新的script元素
+                      const scriptElement = iframeDocument.createElement('script');
+                      // 直接设置JavaScript代码内容
+                      scriptElement.textContent = components.value[index].template.js;
+                      // 添加到body中执行
+                      body.appendChild(scriptElement);
+                    }
+
+                    // 递归初始化
+                    if (actualElement.children.length > 0) {
+                      initElementAsSortable(actualElement)
+                    }
+                  }
+                }
+              })
+
+              // 将新实例添加到实例列表中
+              sortableInstances.push(newSortable)
+
+              // 递归初始化所有子元素
+              initNestedSortables(actualElement)
+            }
           }
         },
       })
       sortableInstances.push(nestedSortable)
+    }
+  })
+}
+
+// 辅助函数：初始化元素为 Sortable 实例
+const initElementAsSortable = (element) => {
+  if (element.children.length > 0) {
+    const uniqueIndex = `new-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+
+    const newSortable = new Sortable(element, {
+      animation: 150,
+      draggable: '*',
+      group: {
+        name: `shared${uniqueIndex}`,
+        put: ['component'] // 允许接收组件库和自身的元素
+      },
+      fallbackOnBody: true,
+
+      onStart: function (evt) {
+        isDragging.value = true
+        console.log('开始拖拽时的transform', evt.item.style.transform)
+      },
+      onEnd: function (evt) {
+        isDragging.value = false
+        console.log('嵌套元素交换位置:', evt.oldIndex, evt.newIndex)
+        console.log('嵌套元素交换位置后的transform', evt.item.style.transform)
+      },
+
+      onAdd: function (evt) {
+        const item = evt.item
+        if (item.classList.contains('component-item')) {
+          // 获取组件的索引
+          const index = evt.oldIndex
+          // 获取实际的模板内容
+          const tempDiv = document.createElement('div')
+          tempDiv.innerHTML = components.value[index].template.html
+          const actualElement = tempDiv.firstElementChild
+
+          // 替换放置的元素
+          item.parentNode.replaceChild(actualElement, item)
+
+            // 检查组件是否有JavaScript代码需要插入
+            if (components.value[index].template && typeof components.value[index].template === 'object' && components.value[index].template.js) {
+              // 创建一个新的script元素
+              const scriptElement = iframeDocument.createElement('script');
+              // 直接设置JavaScript代码内容
+              scriptElement.textContent = components.value[index].template.js;
+              // 添加到body中执行
+              body.appendChild(scriptElement);
+            }
+
+          // 递归初始化
+          if (actualElement.children.length > 0) {
+            initElementAsSortable(actualElement)
+          }
+        }
+      }
+    })
+
+    sortableInstances.push(newSortable)
+
+    // 递归初始化所有子元素
+    initNestedSortables(element)
+  }
+}
+
+// 辅助函数：递归初始化所有嵌套元素
+const initNestedSortables = (parentElement) => {
+  const nestedElements = parentElement.querySelectorAll('*')
+  nestedElements.forEach((element) => {
+    if (element.children.length > 0) {
+      initElementAsSortable(element)
     }
   })
 }
@@ -992,6 +1232,8 @@ const AIChange = () => {
 
 // 简化iframeLoad函数，移除重复的监听
 const iframeLoad = () => {
+  isAllowSelectElement.value = false
+  isDrag.value = false
   const iframeWindow = myIframe.value.contentWindow
   const iframeDocument = myIframe.value.contentDocument
   setIframeEntrance(iframeDocument)
@@ -1118,7 +1360,7 @@ defineExpose({
     <button @click="saveChangedProperty" class="property-save">保存</button>
   </div> -->
 </template>
-<style scoped lang="less">
+<style lang="less" scoped>
 .iframe-wrapper {
   width: 100%;
   height: 100%;
@@ -1188,22 +1430,151 @@ button:not(.menu-item) {
   }
 }
 .context-menu {
-  position: absolute;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
+  position: fixed;
+  background: rgba(255, 245, 250, 0.92);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow:
+    0 8px 32px rgba(183, 157, 255, 0.25),  // 调整阴影颜色为偏紫
+    0 0 0 1px rgba(190, 170, 255, 0.15),
+    inset 0 0 32px rgba(183, 157, 255, 0.12);
+  border: 1px solid rgba(190, 170, 255, 0.35);
   z-index: 9999;
-  min-width: 120px;
+  min-width: 180px;
+  animation: fadeIn 0.3s ease-out;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+      circle,
+      rgba(183, 157, 255, 0.12) 0%,
+      transparent 70%
+    );
+    animation: rotate 15s linear infinite;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      45deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.12) 45%,
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0.12) 55%,
+      transparent 100%
+    );
+    animation: shine 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .menu-item {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: rgb(188,114,219);  // 更改为紫色
+    font-size: 14px;
+    font-weight: bold;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+
+    &:hover {
+      background: linear-gradient(135deg,
+        rgba(183, 157, 255, 0.25),
+        rgba(190, 170, 255, 0.2)
+      );
+      color: #6c3dd3;  // 悬停时的深紫色
+      transform: translateX(4px);
+      text-shadow: 0 0 8px rgba(134, 87, 224, 0.2);
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(183, 157, 255, 0.5),
+          transparent
+        );
+        animation: sparkle 1.5s ease-in-out infinite;
+        pointer-events: none;
+      }
+    }
+
+    &:disabled {
+      color: #b4a2e0;  // 禁用状态的浅紫色
+      cursor: not-allowed;
+      opacity: 0.5;
+      &:hover {
+        background: transparent;
+        transform: none;
+        text-shadow: none;
+      }
+    }
+  }
 }
 
-.menu-item {
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: background 0.2s;
-  display: flex;
-  flex-direction: column;
-  &:hover {
-    background: #f5f5f5;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes sparkle {
+  0% {
+    left: -100%;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shine {
+  0%, 100% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(100%);
   }
 }
 </style>

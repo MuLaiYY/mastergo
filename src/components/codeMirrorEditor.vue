@@ -164,27 +164,120 @@ watch(() => props.page, (newPage, oldPage) => {
   margin: auto;
   width: 100%;
   height: 100%;
-  // text-align: left;
   position: relative;
+  background: linear-gradient(135deg,
+    rgba(139, 92, 246, 0.05) 0%,
+    rgba(236, 72, 153, 0.05) 50%,
+    rgba(139, 92, 246, 0.05) 100%
+  );
+
   :deep(.CodeMirror) {
     height: 100%;
-  }
-}
-button {
-  position: absolute;
-  z-index: 2;
-  top: 10px;
-  right: 20px;
-  padding: 8px 16px;
-  background: #42b983;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+    background: transparent;
+    font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', monospace;
+    color: rgba(76, 29, 149, 0.9);
+    line-height: 1.6;
+    padding: 16px;
 
-  &:disabled {
-    background: #a8d5c2;
-    cursor: not-allowed;
+    .CodeMirror-gutters {
+      background: transparent;
+      border-right: 1px solid rgba(139, 92, 246, 0.15);
+      padding: 0;
+      width: 40px;
+    }
+
+    .CodeMirror-linenumber {
+      color: rgba(139, 92, 246, 0.5);
+      font-size: 0.9em;
+      padding: 0;
+      text-align: right;
+      margin-right: 8px;
+    }
+
+    .CodeMirror-cursor {
+      border-left: 2px solid rgba(139, 92, 246, 0.8);
+    }
+
+    .CodeMirror-selected {
+      background: rgba(139, 92, 246, 0.1) !important;
+    }
+
+    .CodeMirror-line {
+      padding: 2px 0;
+    }
+
+    // 语法高亮自定义
+    .cm-tag {
+      color: rgba(139, 92, 246, 0.9);
+    }
+
+    .cm-attribute {
+      color: rgba(236, 72, 153, 0.9);
+    }
+
+    .cm-string {
+      color: rgba(16, 185, 129, 0.9);
+    }
+
+    .cm-bracket {
+      color: rgba(139, 92, 246, 0.7);
+    }
+
+    &::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.2);
+      border-radius: 3px;
+
+      &:hover {
+        background: rgba(139, 92, 246, 0.3);
+      }
+    }
+  }
+
+  button {
+    position: absolute;
+    z-index: 2;
+    top: 12px;
+    right: 16px;
+    padding: 8px 20px;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 20px -2px rgba(139, 92, 246, 0.2);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px -4px rgba(139, 92, 246, 0.3);
+      background: linear-gradient(135deg, rgba(139, 92, 246, 1), rgba(236, 72, 153, 1));
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      background: linear-gradient(135deg,
+        rgba(139, 92, 246, 0.5),
+        rgba(236, 72, 153, 0.5)
+      );
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
   }
 }
 </style>
