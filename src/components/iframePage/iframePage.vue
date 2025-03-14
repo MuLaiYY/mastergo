@@ -9,8 +9,9 @@ import Sortable from 'sortablejs'
 const componentArea = useComponentAreaStore()
 const { components } = storeToRefs(componentArea)
 const aiChatStore = useAiChatStore()
-const { setSelectedElement, setIframeEntrance, setIsRequireAIChange ,setIsAllowSelectElement} = aiChatStore
-const { isRequireAIChange , isAllowSelectElement,} = storeToRefs(aiChatStore)
+const { setSelectedElement, setIframeEntrance, setIsRequireAIChange, setIsAllowSelectElement } =
+  aiChatStore
+const { isRequireAIChange, isAllowSelectElement, selectedElement } = storeToRefs(aiChatStore)
 const myIframe = ref(null)
 const iframeWrapper = ref(null)
 const iframeObserver = ref(null) // 用于存储MutationObserver实例
@@ -111,11 +112,9 @@ let sortableInstances = [] // 存储所有 Sortable 实例
 const props = defineProps({
   page: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 })
-
-
 
 //#region 元素信息展示模块
 
@@ -133,7 +132,13 @@ const initHoverAndLeaveEffect = (iframeDocument) => {
       }
     })
   })
-
+//禁止type=submit的按钮提交
+  const submitButtons = iframeDocument.querySelectorAll('button[type="submit"]')
+  submitButtons.forEach((submitButton) => {
+    submitButton.addEventListener('click', (event) => {
+      event.preventDefault() // 阻止默认行为
+    })
+  })
   // 添加全局样式
   const style = iframeDocument.createElement('style')
   //outline也可以换成下面这种
@@ -225,6 +230,7 @@ const changeAllowSelect = () => {
   setIsAllowSelectElement(!isAllowSelectElement.value)
   if (!isAllowSelectElement.value) {
     isDrag.value = false
+    setSelectedElement(null)
   }
   // 清除当前高亮
   if (lastHoverElement) {
@@ -234,7 +240,6 @@ const changeAllowSelect = () => {
 }
 //处理悬停
 const handleElementHover = (e) => {
-
   if (
     !isAllowSelectElement.value ||
     isRotate.value ||
@@ -243,8 +248,13 @@ const handleElementHover = (e) => {
     isAllowChangeProperty.value ||
     isScale.value ||
     isRequireAIChange.value
+
   )
     return // 菜单显示时、修改属性时不更新高亮
+//先把selectedElement中的高亮去掉
+if(selectedElement.value){
+  selectedElement.value.classList.remove('special-hover-highlight')
+}
 
   // console.log('鼠标进来了：', e.target)
   let target
@@ -275,7 +285,7 @@ const handleElementLeave = (e) => {
     isScale.value ||
     isRequireAIChange.value
   )
-    return // 菜单显示时、修改属性时不更新高亮
+    return
 
   // console.log(
   //   '鼠标离开了',
@@ -316,6 +326,7 @@ const initContextMenu = (iframeWindow, iframeDocument) => {
 //出现右键菜单
 const showCustomMenu = (e) => {
   console.log('右键了一下')
+  console.log('selectedElement', selectedElement.value)
   //排除html和body
   if (e.target.tagName === 'BODY' || e.target.tagName === 'HTML') return
   contextMenu.targetElement = e.target
@@ -325,22 +336,22 @@ const showCustomMenu = (e) => {
   contextMenu.y = e.clientY
   contextMenu.visible = true
 
-  //元素对应可修改的属性（不同的元素能修改的属性是不同的）
+  // //元素对应可修改的属性（不同的元素能修改的属性是不同的）
 
-  targetElementPropertyList.value = propertyList.find(
-    (item) => item.name === contextMenu.targetElement.tagName,
-  ).props
+  // targetElementPropertyList.value = propertyList.find(
+  //   (item) => item.name === contextMenu.targetElement.tagName,
+  // ).props
 
-  //getComputedStyle可以获取内联和非内联样式，而.style只能获取内联样式
-  const sourceCss = window.getComputedStyle(e.target)
-  for (const item in targetElementPropertyList.value) {
-    targetElementPropertyList.value[item].value = sourceCss[item].includes('px')
-      ? sourceCss[item].split('px')[0]
-      : sourceCss[item]
-  }
-  console.log('读取到的属性', targetElementPropertyList.value)
-  beforeSave = JSON.parse(JSON.stringify(targetElementPropertyList.value))
-  console.log('被保存前（同上）', beforeSave)
+  // //getComputedStyle可以获取内联和非内联样式，而.style只能获取内联样式
+  // const sourceCss = window.getComputedStyle(e.target)
+  // for (const item in targetElementPropertyList.value) {
+  //   targetElementPropertyList.value[item].value = sourceCss[item].includes('px')
+  //     ? sourceCss[item].split('px')[0]
+  //     : sourceCss[item]
+  // }
+  // console.log('读取到的属性', targetElementPropertyList.value)
+  // beforeSave = JSON.parse(JSON.stringify(targetElementPropertyList.value))
+  // console.log('被保存前（同上）', beforeSave)
 }
 // 隐藏菜单
 const hideMenu = () => {
@@ -939,13 +950,17 @@ const initDrag = (iframeDocument) => {
         item.parentNode.replaceChild(actualElement, item)
 
         // 检查组件是否有JavaScript代码需要插入
-        if (components.value[index].template && typeof components.value[index].template === 'object' && components.value[index].template.js) {
+        if (
+          components.value[index].template &&
+          typeof components.value[index].template === 'object' &&
+          components.value[index].template.js
+        ) {
           // 创建一个新的script元素
-          const scriptElement = iframeDocument.createElement('script');
+          const scriptElement = iframeDocument.createElement('script')
           // 直接设置JavaScript代码内容
-          scriptElement.textContent = components.value[index].template.js;
+          scriptElement.textContent = components.value[index].template.js
           // 添加到body中执行
-          body.appendChild(scriptElement);
+          body.appendChild(scriptElement)
         }
 
         // 如果新添加的元素有子元素，将其初始化为 Sortable 实例
@@ -958,7 +973,7 @@ const initDrag = (iframeDocument) => {
             draggable: '*',
             group: {
               name: `shared${uniqueIndex}`,
-              put: ['component'] // 允许接收组件库和自身的元素
+              put: ['component'], // 允许接收组件库和自身的元素
             },
             fallbackOnBody: true,
 
@@ -987,13 +1002,17 @@ const initDrag = (iframeDocument) => {
                 item.parentNode.replaceChild(actualElement, item)
 
                 // 检查组件是否有JavaScript代码需要插入
-                if (components.value[index].template && typeof components.value[index].template === 'object' && components.value[index].template.js) {
+                if (
+                  components.value[index].template &&
+                  typeof components.value[index].template === 'object' &&
+                  components.value[index].template.js
+                ) {
                   // 创建一个新的script元素
-                  const scriptElement = iframeDocument.createElement('script');
+                  const scriptElement = iframeDocument.createElement('script')
                   // 直接设置JavaScript代码内容
-                  scriptElement.textContent = components.value[index].template.js;
+                  scriptElement.textContent = components.value[index].template.js
                   // 添加到body中执行
-                  body.appendChild(scriptElement);
+                  body.appendChild(scriptElement)
                 }
 
                 // 递归初始化
@@ -1001,7 +1020,7 @@ const initDrag = (iframeDocument) => {
                   initElementAsSortable(actualElement)
                 }
               }
-            }
+            },
           })
 
           // 将新实例添加到实例列表中
@@ -1011,22 +1030,22 @@ const initDrag = (iframeDocument) => {
           initNestedSortables(actualElement)
         }
       }
-    }
+    },
   })
   sortableInstances.push(mainSortable)
 
   // 为嵌套容器创建 Sortable 实例
   const nestedContainers = body.querySelectorAll('*')
-  nestedContainers.forEach((nestedContainer,index) => {
+  nestedContainers.forEach((nestedContainer, index) => {
     if (nestedContainer.children.length > 0) {
       const nestedSortable = new Sortable(nestedContainer, {
         animation: 150,
         draggable: '*',
         group: {
           name: `shared${index}`,
-          put: ['component'] // 允许接收组件库和自身的元素
+          put: ['component'], // 允许接收组件库和自身的元素
         },
-        fallbackOnBody:true,
+        fallbackOnBody: true,
 
         onStart: function (evt) {
           isDragging.value = true
@@ -1053,13 +1072,17 @@ const initDrag = (iframeDocument) => {
             item.parentNode.replaceChild(actualElement, item)
 
             // 检查组件是否有JavaScript代码需要插入
-            if (components.value[index].template && typeof components.value[index].template === 'object' && components.value[index].template.js) {
+            if (
+              components.value[index].template &&
+              typeof components.value[index].template === 'object' &&
+              components.value[index].template.js
+            ) {
               // 创建一个新的script元素
-              const scriptElement = iframeDocument.createElement('script');
+              const scriptElement = iframeDocument.createElement('script')
               // 直接设置JavaScript代码内容
-              scriptElement.textContent = components.value[index].template.js;
+              scriptElement.textContent = components.value[index].template.js
               // 添加到body中执行
-              body.appendChild(scriptElement);
+              body.appendChild(scriptElement)
             }
 
             // 如果新添加的元素有子元素，将其初始化为 Sortable 实例
@@ -1072,7 +1095,7 @@ const initDrag = (iframeDocument) => {
                 draggable: '*',
                 group: {
                   name: `shared${uniqueIndex}`,
-                  put: ['component'] // 允许接收组件库和自身的元素
+                  put: ['component'], // 允许接收组件库和自身的元素
                 },
                 fallbackOnBody: true,
 
@@ -1101,13 +1124,17 @@ const initDrag = (iframeDocument) => {
                     item.parentNode.replaceChild(actualElement, item)
 
                     // 检查组件是否有JavaScript代码需要插入
-                    if (components.value[index].template && typeof components.value[index].template === 'object' && components.value[index].template.js) {
+                    if (
+                      components.value[index].template &&
+                      typeof components.value[index].template === 'object' &&
+                      components.value[index].template.js
+                    ) {
                       // 创建一个新的script元素
-                      const scriptElement = iframeDocument.createElement('script');
+                      const scriptElement = iframeDocument.createElement('script')
                       // 直接设置JavaScript代码内容
-                      scriptElement.textContent = components.value[index].template.js;
+                      scriptElement.textContent = components.value[index].template.js
                       // 添加到body中执行
-                      body.appendChild(scriptElement);
+                      body.appendChild(scriptElement)
                     }
 
                     // 递归初始化
@@ -1115,7 +1142,7 @@ const initDrag = (iframeDocument) => {
                       initElementAsSortable(actualElement)
                     }
                   }
-                }
+                },
               })
 
               // 将新实例添加到实例列表中
@@ -1142,7 +1169,7 @@ const initElementAsSortable = (element) => {
       draggable: '*',
       group: {
         name: `shared${uniqueIndex}`,
-        put: ['component'] // 允许接收组件库和自身的元素
+        put: ['component'], // 允许接收组件库和自身的元素
       },
       fallbackOnBody: true,
 
@@ -1169,22 +1196,26 @@ const initElementAsSortable = (element) => {
           // 替换放置的元素
           item.parentNode.replaceChild(actualElement, item)
 
-            // 检查组件是否有JavaScript代码需要插入
-            if (components.value[index].template && typeof components.value[index].template === 'object' && components.value[index].template.js) {
-              // 创建一个新的script元素
-              const scriptElement = iframeDocument.createElement('script');
-              // 直接设置JavaScript代码内容
-              scriptElement.textContent = components.value[index].template.js;
-              // 添加到body中执行
-              body.appendChild(scriptElement);
-            }
+          // 检查组件是否有JavaScript代码需要插入
+          if (
+            components.value[index].template &&
+            typeof components.value[index].template === 'object' &&
+            components.value[index].template.js
+          ) {
+            // 创建一个新的script元素
+            const scriptElement = iframeDocument.createElement('script')
+            // 直接设置JavaScript代码内容
+            scriptElement.textContent = components.value[index].template.js
+            // 添加到body中执行
+            body.appendChild(scriptElement)
+          }
 
           // 递归初始化
           if (actualElement.children.length > 0) {
             initElementAsSortable(actualElement)
           }
         }
-      }
+      },
     })
 
     sortableInstances.push(newSortable)
@@ -1221,10 +1252,16 @@ const exportCode = () => {
 const AIChange = () => {
   setIsRequireAIChange(!isRequireAIChange.value)
   if (isRequireAIChange.value) {
-
     setSelectedElement(lastHoverElement)
   } else {
     setSelectedElement(null)
+  }
+}
+
+const treeClick = (e) => {
+  if (isAllowSelectElement.value) {
+    setSelectedElement(e.target)
+    console.log('treeClick', selectedElement.value)
   }
 }
 
@@ -1232,7 +1269,9 @@ const AIChange = () => {
 
 // 简化iframeLoad函数，移除重复的监听
 const iframeLoad = () => {
-  isAllowSelectElement.value = false
+  setIsAllowSelectElement(false)
+  setIsRequireAIChange(false)
+  setSelectedElement(null)
   isDrag.value = false
   const iframeWindow = myIframe.value.contentWindow
   const iframeDocument = myIframe.value.contentDocument
@@ -1240,6 +1279,8 @@ const iframeLoad = () => {
 
   initHoverAndLeaveEffect(iframeDocument)
   initContextMenu(iframeWindow, iframeDocument)
+  //通知元素树现在点击的元素
+  iframeDocument.addEventListener('click', treeClick)
 }
 
 const defaultIframeContent = `
@@ -1300,13 +1341,16 @@ const defaultIframeContent = `
 </html>
 `
 // 导出方法，以便其他组件可以调用
-defineExpose({
-
-})
+defineExpose({})
 </script>
 <template>
   <div ref="iframeWrapper" class="iframe-wrapper">
-    <iframe @load="iframeLoad" ref="myIframe" :srcdoc="props.page?.htmlContent || defaultIframeContent" frameborder="0"></iframe>
+    <iframe
+      @load="iframeLoad"
+      ref="myIframe"
+      :srcdoc="props.page?.htmlContent || defaultIframeContent"
+      frameborder="0"
+    ></iframe>
     <!-- 右键菜单 -->
     <div
       v-if="contextMenu.visible"
@@ -1319,12 +1363,7 @@ defineExpose({
       <button class="menu-item" @click="deleteElement" :disabled="!isAllowSelectElement">
         删除
       </button>
-      <button
-        class="menu-item"
-        @click="allowChangeProperty"
-        id="changeProperty"
-        :disabled="!isAllowSelectElement"
-      >
+      <button class="menu-item" id="changeProperty" :disabled="!isAllowSelectElement">
         {{ isAllowChangeProperty ? '关闭修改属性' : '开启修改属性' }}
       </button>
       <button class="menu-item" @click="allowRotate" :disabled="!isAllowSelectElement">旋转</button>
@@ -1345,20 +1384,6 @@ defineExpose({
       </button>
     </div>
   </div>
-
-  <!-- <div class="property" v-if="isAllowChangeProperty">
-    <div
-      class="item"
-      v-for="(item, index) in Object.values(targetElementPropertyList)"
-      :key="index"
-    >
-      <span>{{ item.name }}：</span>
-      <input v-model="item.value" />
-    </div>
-
-    <button @click="cancelChangedProperty" class="property-cancel">取消</button>
-    <button @click="saveChangedProperty" class="property-save">保存</button>
-  </div> -->
 </template>
 <style lang="less" scoped>
 .iframe-wrapper {
@@ -1436,7 +1461,8 @@ button:not(.menu-item) {
   border-radius: 16px;
   padding: 10px;
   box-shadow:
-    0 8px 32px rgba(183, 157, 255, 0.25),  // 调整阴影颜色为偏紫
+    0 8px 32px rgba(183, 157, 255, 0.25),
+    // 调整阴影颜色为偏紫
     0 0 0 1px rgba(190, 170, 255, 0.15),
     inset 0 0 32px rgba(183, 157, 255, 0.12);
   border: 1px solid rgba(190, 170, 255, 0.35);
@@ -1452,11 +1478,7 @@ button:not(.menu-item) {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(
-      circle,
-      rgba(183, 157, 255, 0.12) 0%,
-      transparent 70%
-    );
+    background: radial-gradient(circle, rgba(183, 157, 255, 0.12) 0%, transparent 70%);
     animation: rotate 15s linear infinite;
     pointer-events: none;
   }
@@ -1484,7 +1506,7 @@ button:not(.menu-item) {
     padding: 10px 16px;
     border: none;
     background: transparent;
-    color: rgb(188,114,219);  // 更改为紫色
+    color: rgb(188, 114, 219); // 更改为紫色
     font-size: 14px;
     font-weight: bold;
     text-align: left;
@@ -1494,11 +1516,8 @@ button:not(.menu-item) {
     z-index: 1;
 
     &:hover {
-      background: linear-gradient(135deg,
-        rgba(183, 157, 255, 0.25),
-        rgba(190, 170, 255, 0.2)
-      );
-      color: #6c3dd3;  // 悬停时的深紫色
+      background: linear-gradient(135deg, rgba(183, 157, 255, 0.25), rgba(190, 170, 255, 0.2));
+      color: #6c3dd3; // 悬停时的深紫色
       transform: translateX(4px);
       text-shadow: 0 0 8px rgba(134, 87, 224, 0.2);
 
@@ -1509,19 +1528,14 @@ button:not(.menu-item) {
         left: -100%;
         width: 100%;
         height: 100%;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(183, 157, 255, 0.5),
-          transparent
-        );
+        background: linear-gradient(90deg, transparent, rgba(183, 157, 255, 0.5), transparent);
         animation: sparkle 1.5s ease-in-out infinite;
         pointer-events: none;
       }
     }
 
     &:disabled {
-      color: #b4a2e0;  // 禁用状态的浅紫色
+      color: #b4a2e0; // 禁用状态的浅紫色
       cursor: not-allowed;
       opacity: 0.5;
       &:hover {
@@ -1568,7 +1582,8 @@ button:not(.menu-item) {
 }
 
 @keyframes shine {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translateX(-100%);
   }

@@ -23,7 +23,7 @@ const aiChatStore = useAiChatStore()
 // 使用获取当前页面聊天记录的函数
 const chatMsgs = computed(() => aiChatStore.getCurrentPageChatMsgs())
 const { addChatMsg, setSelectedElement, setIsRequireAIChange, setIsAllowSelectElement } = aiChatStore
-const { selectedElement, iframeEntrance, currentPageId } = storeToRefs(aiChatStore)
+const { selectedElement, iframeEntrance, currentPageId, isRequireAIChange } = storeToRefs(aiChatStore)
 const userInput = ref('')
 const sendBtn = ref(null)
 const chatContainer = ref(null)
@@ -147,7 +147,7 @@ const sendMessage = async () => {
     userInput.value = ''
     isInputEmpty.value = true // 更新输入状态为空
 
-    if (selectedElement.value) {
+    if (selectedElement.value&&isRequireAIChange.value) {
       trueMessage = `${currentInput} 。待修改组件代码如下：${selectedElement.value.outerHTML}`
     } else {
       trueMessage = currentInput

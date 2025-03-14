@@ -25,7 +25,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const selectedElement = ref<HTMLElement | null>(null)
 
   // iframe的document
-  const iframeEntrance = ref<HTMLIFrameElement | null>(null)
+  const iframeEntrance = ref<Document | null>(null)
 
   // 是否允许AI修改
   const isRequireAIChange = ref<boolean>(false)
@@ -105,7 +105,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
   }
 
   // 设置iframe的document
-  function setIframeEntrance(element: HTMLIFrameElement) {
+  function setIframeEntrance(element: Document) {
     iframeEntrance.value = element
   }
 

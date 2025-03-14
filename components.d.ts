@@ -12,6 +12,7 @@ declare module 'vue' {
     CodeMirrorEditor: typeof import('./src/components/codeMirrorEditor.vue')['default']
     ComponentArea: typeof import('./src/components/componentArea/componentArea.vue')['default']
     ComponentStore: typeof import('./src/components/componentStore.vue')['default']
+    ElementTree: typeof import('./src/components/elementTree.vue')['default']
     IframePage: typeof import('./src/components/iframePage/iframePage.vue')['default']
     MonacoEditor: typeof import('./src/components/monacoEditor.vue')['default']
     PageEditor: typeof import('./src/components/PageEditor.vue')['default']

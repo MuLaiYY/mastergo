@@ -52,14 +52,7 @@
             <span>组件</span>
           </button>
 
-          <button
-            class="tab-button"
-            :class="{ 'active': activeTab === 'code' }"
-            @click="activeTab = 'code'"
-          >
-            <code-icon class="tab-icon" />
-            <span>代码</span>
-          </button>
+
 
           <button
             class="tab-button"
@@ -68,6 +61,22 @@
           >
             <layout-template-icon class="tab-icon" />
             <span>模板</span>
+          </button>
+          <button
+            class="tab-button"
+            :class="{ 'active': activeTab === 'elementTree' }"
+            @click="activeTab = 'elementTree'"
+          >
+            <trees-icon class="tab-icon" />
+            <span>节点树</span>
+          </button>
+          <button
+            class="tab-button"
+            :class="{ 'active': activeTab === 'code' }"
+            @click="activeTab = 'code'"
+          >
+            <code-icon class="tab-icon" />
+            <span>代码</span>
           </button>
         </div>
 
@@ -96,7 +105,9 @@ import {
   Code as CodeIcon,
   Layout as LayoutIcon,
   MessageSquare as MessageSquareIcon,
-  LayoutTemplate as LayoutTemplateIcon
+  LayoutTemplate as LayoutTemplateIcon,
+
+  Trees as TreesIcon
 } from 'lucide-vue-next';
 
 // 导入API接口
@@ -112,7 +123,7 @@ import CodeMirrorEditor from '@/components/codeMirrorEditor.vue';
 import ChatBox from '@/components/ai/chatBox.vue';
 import ComponentArea from '@/components/componentArea/componentArea.vue';
 import TemplatePage from '@/components/templatePage.vue';
-
+import ElementTree from '@/components/elementTree.vue';
 // 路由和页面ID
 const route = useRoute();
 const router = useRouter();
@@ -240,6 +251,8 @@ const getActiveComponent = () => {
       return ChatBox;
     case 'template':
       return TemplatePage;
+    case 'elementTree':
+      return ElementTree;
     default:
       return CodeMirrorEditor;
   }

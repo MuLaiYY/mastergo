@@ -530,47 +530,6 @@
         </div>
     </footer>
 
-    <!-- 移动端菜单（默认隐藏） -->
-    <div id="mobile-menu" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden">
-        <div class="bg-white h-full w-64 shadow-xl p-5">
-            <div class="flex justify-between items-center mb-6">
-                <div class="flex items-center space-x-2">
-                    <div class="gradient-bg w-8 h-8 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-graduation-cap text-white text-lg"></i>
-                    </div>
-                    <span class="text-lg font-bold bg-clip-text text-transparent gradient-bg">学习乐</span>
-                </div>
-                <button id="close-menu" class="text-gray-500 hover:text-gray-700 focus:outline-none">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-            <nav>
-                <ul class="space-y-4">
-                    <li><a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">课程</a></li>
-                    <li><a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">讲师</a></li>
-                    <li><a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">价格</a></li>
-                    <li><a href="#" class="block py-2 px-4 hover:bg-gray-100 rounded-lg">登录</a></li>
-                    <li><a href="#" class="block py-2 px-4 gradient-bg text-white rounded-lg">注册</a></li>
-                </ul>
-            </nav>
-        </div>
-    </div>
-
-    <!-- 移动端菜单切换的JavaScript -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuButton = document.querySelector('.md\\:hidden button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            const closeButton = document.getElementById('close-menu');
-            
-            menuButton.addEventListener('click', function() {
-                mobileMenu.classList.toggle('hidden');
-            });
-            
-            closeButton.addEventListener('click', function() {
-                mobileMenu.classList.add('hidden');
-            });
-        });
-    </script>
+  
 </body>
 </html>
