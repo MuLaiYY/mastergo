@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, reactive, onUnmounted, nextTick, defineProps } from 'vue'
+import { ref, watch, reactive, onUnmounted, nextTick, defineProps, h } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useComponentAreaStore } from '@/stores'
@@ -148,9 +148,9 @@ const initHoverAndLeaveEffect = (iframeDocument) => {
     .special-hover-highlight {
 
         cursor: default;
-        outline: 1px dashed #f00;
+        outline: 2px dashed rgb(225,93, 176);
         animation: pulse 1s infinite;
-        background-color: rgba(255, 0, 0, 0.1);
+        background-color: rgba(225,93, 176, 0.1);
         input{
           pointer-events: none;
         }
@@ -168,6 +168,29 @@ body{
     }
       }
   `
+  //老板.special-hover-highlight
+//   .special-hover-highlight {
+
+// cursor: default;
+// outline: 2px dashed #f00;
+// animation: pulse 1s infinite;
+// background-color: rgba(255, 0, 0, 0.1);
+// input{
+//   pointer-events: none;
+// }
+// }
+
+// @keyframes pulse {
+// 0% {  opacity: 1; }
+// 50% {  opacity: 0.4; }
+// 100% {  opacity: 1; }
+// }
+// body{
+// &::-webkit-scrollbar {
+// width: 0px;
+
+// }
+// }
 
   iframeDocument.head.appendChild(style)
 
@@ -247,7 +270,7 @@ const handleElementHover = (e) => {
     contextMenu.visible ||
     isAllowChangeProperty.value ||
     isScale.value ||
-    isRequireAIChange.value
+    selectedElement.value
 
   )
     return // 菜单显示时、修改属性时不更新高亮
@@ -283,7 +306,7 @@ const handleElementLeave = (e) => {
     contextMenu.visible ||
     isAllowChangeProperty.value ||
     isScale.value ||
-    isRequireAIChange.value
+    selectedElement.value
   )
     return
 
@@ -324,34 +347,25 @@ const initContextMenu = (iframeWindow, iframeDocument) => {
 }
 // 右键显示自定义菜单
 //出现右键菜单
+const contextMenuDiv = ref(null)
 const showCustomMenu = (e) => {
   console.log('右键了一下')
   console.log('selectedElement', selectedElement.value)
+  console.log('鼠标点击位置',e.clientX,e.clientY)
   //排除html和body
-  if (e.target.tagName === 'BODY' || e.target.tagName === 'HTML') return
-  contextMenu.targetElement = e.target
-  // const iframeRect = myIframe.value.getBoundingClientRect()
-  //菜单出现位置
-  contextMenu.x = e.clientX
-  contextMenu.y = e.clientY
+  if (selectedElement.value?.tagName === 'BODY' || selectedElement.value?.tagName === 'HTML') return
+  contextMenu.targetElement = selectedElement.value
+
+  //获取contextMenuDiv的宽高
+  const { width, height } = contextMenuDiv.value.getBoundingClientRect()
+  //获取iframe的位置和大小
+  const iframeRect = myIframe.value.getBoundingClientRect()
+
+  contextMenu.x = e.clientX+width>iframeRect.width?e.clientX-width:e.clientX
+  contextMenu.y = e.clientY+height>iframeRect.height?e.clientY-height:e.clientY
+ console.log('contextMenu.x',contextMenu.x)
+ console.log('contextMenu.y',contextMenu.y)
   contextMenu.visible = true
-
-  // //元素对应可修改的属性（不同的元素能修改的属性是不同的）
-
-  // targetElementPropertyList.value = propertyList.find(
-  //   (item) => item.name === contextMenu.targetElement.tagName,
-  // ).props
-
-  // //getComputedStyle可以获取内联和非内联样式，而.style只能获取内联样式
-  // const sourceCss = window.getComputedStyle(e.target)
-  // for (const item in targetElementPropertyList.value) {
-  //   targetElementPropertyList.value[item].value = sourceCss[item].includes('px')
-  //     ? sourceCss[item].split('px')[0]
-  //     : sourceCss[item]
-  // }
-  // console.log('读取到的属性', targetElementPropertyList.value)
-  // beforeSave = JSON.parse(JSON.stringify(targetElementPropertyList.value))
-  // console.log('被保存前（同上）', beforeSave)
 }
 // 隐藏菜单
 const hideMenu = () => {
@@ -370,6 +384,8 @@ const deleteElement = () => {
   existing?.remove()
 
   contextMenu.targetElement?.remove()
+  setSelectedElement(null)
+  lastSelectedElement = null
   hideMenu()
 }
 //#endregion
@@ -1251,17 +1267,25 @@ const exportCode = () => {
 
 const AIChange = () => {
   setIsRequireAIChange(!isRequireAIChange.value)
-  if (isRequireAIChange.value) {
-    setSelectedElement(lastHoverElement)
-  } else {
-    setSelectedElement(null)
-  }
 }
-
+let lastSelectedElement = null
 const treeClick = (e) => {
+  //如果开启了元素选择，则可以点击元素
   if (isAllowSelectElement.value) {
+    //设置被点击元素（即被选中元素）
     setSelectedElement(e.target)
     console.log('treeClick', selectedElement.value)
+    //如果和上次被选中元素是同一个，则取消其选中
+    if(lastSelectedElement===selectedElement.value){
+      selectedElement.value?.classList.remove('special-hover-highlight')
+      setSelectedElement(null)
+      lastSelectedElement = null
+    }else{
+      lastSelectedElement?.classList.remove('special-hover-highlight')
+
+      selectedElement.value?.classList.add('special-hover-highlight')
+      lastSelectedElement = selectedElement.value
+    }
   }
 }
 
@@ -1353,21 +1377,22 @@ defineExpose({})
     ></iframe>
     <!-- 右键菜单 -->
     <div
-      v-if="contextMenu.visible"
+      v-show="contextMenu.visible"
+      ref="contextMenuDiv"
       :style="{
         left: `${contextMenu.x}px`,
         top: `${contextMenu.y}px`,
       }"
       class="context-menu"
     >
-      <button class="menu-item" @click="deleteElement" :disabled="!isAllowSelectElement">
+      <button class="menu-item" @click="deleteElement" :disabled="!isAllowSelectElement||!selectedElement">
         删除
       </button>
-      <button class="menu-item" id="changeProperty" :disabled="!isAllowSelectElement">
+      <!-- <button class="menu-item" id="changeProperty" :disabled="!isAllowSelectElement||!selectedElement">
         {{ isAllowChangeProperty ? '关闭修改属性' : '开启修改属性' }}
-      </button>
-      <button class="menu-item" @click="allowRotate" :disabled="!isAllowSelectElement">旋转</button>
-      <button class="menu-item" @click="allowScale" :disabled="!isAllowSelectElement">放缩</button>
+      </button> -->
+      <button class="menu-item" @click="allowRotate" :disabled="!isAllowSelectElement||!selectedElement">旋转</button>
+      <button class="menu-item" @click="allowScale" :disabled="!isAllowSelectElement||!selectedElement">放缩</button>
       <button
         class="menu-item"
         @click="changeDrag"
@@ -1455,7 +1480,7 @@ button:not(.menu-item) {
   }
 }
 .context-menu {
-  position: fixed;
+  position: absolute;
   background: rgba(255, 245, 250, 0.92);
   backdrop-filter: blur(12px);
   border-radius: 16px;

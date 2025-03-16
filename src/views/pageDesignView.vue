@@ -72,6 +72,14 @@
           </button>
           <button
             class="tab-button"
+            :class="{ 'active': activeTab === 'propertyConfig' }"
+            @click="activeTab = 'propertyConfig'"
+          >
+            <settings-icon class="tab-icon" />
+            <span>属性配置</span>
+          </button>
+          <button
+            class="tab-button"
             :class="{ 'active': activeTab === 'code' }"
             @click="activeTab = 'code'"
           >
@@ -95,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch } from 'vue';
+import { ref, reactive, onMounted, computed, watch ,onBeforeUnmount} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import {
@@ -106,7 +114,7 @@ import {
   Layout as LayoutIcon,
   MessageSquare as MessageSquareIcon,
   LayoutTemplate as LayoutTemplateIcon,
-
+  Settings as SettingsIcon,
   Trees as TreesIcon
 } from 'lucide-vue-next';
 
@@ -124,6 +132,7 @@ import ChatBox from '@/components/ai/chatBox.vue';
 import ComponentArea from '@/components/componentArea/componentArea.vue';
 import TemplatePage from '@/components/templatePage.vue';
 import ElementTree from '@/components/elementTree.vue';
+import PropertyConfig from '@/components/propertyConfig.vue';
 // 路由和页面ID
 const route = useRoute();
 const router = useRouter();
@@ -132,7 +141,7 @@ const pageId = computed(() => route.params.pageId as string);
 
 // 初始化存储
 const aiChatStore = useAiChatStore();
-
+const {setSelectedElement} = aiChatStore
 // 页面数据
 const page = ref<Page | null>(null);
 const isLoading = ref(true);
@@ -253,6 +262,8 @@ const getActiveComponent = () => {
       return TemplatePage;
     case 'elementTree':
       return ElementTree;
+    case 'propertyConfig':
+      return PropertyConfig;
     default:
       return CodeMirrorEditor;
   }
@@ -273,6 +284,9 @@ const reloadPage = async () => {
 onMounted(async () => {
   await loadPage();
 });
+onBeforeUnmount(()=>{
+  setSelectedElement(null)
+})
 </script>
 
 <style scoped lang="less">
@@ -463,10 +477,10 @@ onMounted(async () => {
       .tab-button {
         display: flex;
         align-items: center;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 0.3rem;
         border: none;
         background: transparent;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         color: rgba(107, 114, 128, 0.8);
         cursor: pointer;
         border-radius: 8px;

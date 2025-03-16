@@ -100,7 +100,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
   }
 
   // 设置选中的DOM元素
-  function setSelectedElement(element: HTMLElement) {
+  function setSelectedElement(element: HTMLElement|null) {
     selectedElement.value = element
   }
 

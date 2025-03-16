@@ -16,6 +16,7 @@ declare module 'vue' {
     IframePage: typeof import('./src/components/iframePage/iframePage.vue')['default']
     MonacoEditor: typeof import('./src/components/monacoEditor.vue')['default']
     PageEditor: typeof import('./src/components/PageEditor.vue')['default']
+    PropertyConfig: typeof import('./src/components/propertyConfig.vue')['default']
     PropertyPanel: typeof import('./src/components/PropertyPanel.vue')['default']
     QwenAI: typeof import('./src/components/ai/qwenAI.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

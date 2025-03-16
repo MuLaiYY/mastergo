@@ -214,7 +214,7 @@ const sendMessage = async () => {
 
     // 确定消息类型
     let type
-    if (selectedElement.value) {
+    if (selectedElement.value&&isRequireAIChange.value) {
       type = 'modify_component'
     } else if (newElement.html !== '') {
       // 检查HTML内容是否包含完整的HTML文档结构
@@ -262,8 +262,11 @@ const sendMessage = async () => {
       console.log('检测到生成页面类型，自动渲染页面')
       renderGeneratedPage(chatMsgs.value[msgIndex].id)
     } else if (type === 'modify_component') {
-      console.log('检测到修改组件类型，请点击"修改"按钮应用更改')
-      insertElement(chatMsgs.value[msgIndex].id)
+
+      if(chatMsgs.value[msgIndex].newElement.html){
+        insertElement(chatMsgs.value[msgIndex].id)
+        console.log('检测到修改组件类型,AI已自动修改组件代码')
+      }
     }
 
     // 应用代码高亮
@@ -411,7 +414,8 @@ const insertElement = (id) => {
   setIsRequireAIChange(false)
   //插入元素
   //移除掉msg.newElement.html里的special-hover-highlight类名
-  msg.newElement.html = msg.newElement.html.replace('special-hover-highlight', '')
+  // 使用正则表达式匹配独立的special-hover-highlight类名，避免影响其他包含该字符串的类名
+  msg.newElement.html = msg.newElement.html.replace(/\bspecial-hover-highlight\b/g, '')
   msg.selectedElement.outerHTML = msg.newElement.html
 
   //插入css
@@ -430,7 +434,7 @@ const insertElement = (id) => {
   //清空选中元素
   setSelectedElement(null)
   //关闭元素选择
-  setIsAllowSelectElement(false)
+   setIsAllowSelectElement(false)
 
 }
 

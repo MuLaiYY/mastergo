@@ -1,6 +1,6 @@
 <template>
   <div class="element-tree" @click="clearSelection">
-    <div class="element-tree-header" @click.stop>
+    <div class="element-tree-header" @click.stop @click="showContextMenu = false">
       <h3>节点树</h3>
     </div>
     <div class="tree-container" @click.stop>
@@ -11,10 +11,11 @@
           :node="node"
           @node-selected="handleNodeSelected"
           @node-context-menu="handleNodeContextMenu"
+
         />
       </div>
       <div v-else class="no-content">
-        尚未加载DOM结构
+        <button @click="refreshComponent">加载DOM结构失败,可刷新重试</button>
       </div>
     </div>
 
@@ -31,6 +32,9 @@
       >
         <div class="context-menu-item" @click="copyNode">
           复制节点
+        </div>
+        <div class="context-menu-item" @click="deleteNode">
+          删除节点
         </div>
       </div>
     </Teleport>
@@ -186,6 +190,26 @@ const elementTree = ref<TreeNodeType[]>([]);
 const activeElement = ref<Element | null>(null);
 const highlightElement = ref<Element | null>(null);
 let resizeObserver: ResizeObserver | null = null;
+let mutationObserver: MutationObserver | null = null; // 添加MutationObserver引用
+
+// 组件刷新功能
+const refreshComponent = (): void => {
+  // 清空当前树结构
+  elementTree.value = [];
+
+  // 清除选中状态
+  activeElement.value = null;
+  highlightElement.value = null;
+
+  // 重新构建元素树
+  if (iframeEntrance.value) {
+    const body = iframeEntrance.value.body;
+    const rootNode = buildElementTree(body);
+    if (rootNode) {
+      elementTree.value = [rootNode];
+    }
+  }
+};
 
 // 高亮DOM元素
 const highlightDomElement = (element: Element | Text): void => {
@@ -818,6 +842,137 @@ const preventDefaultContextMenu = (event: MouseEvent): void => {
   }
 };
 
+// 处理DOM变化
+const handleDomMutations = (mutations: MutationRecord[]): void => {
+  let hasStructuralChanges = false;
+
+  for (const mutation of mutations) {
+    if (mutation.type === 'childList') {
+      // 处理节点删除
+      if (mutation.removedNodes.length > 0) {
+        for (const removedNode of mutation.removedNodes) {
+          // 如果删除的是元素节点或文本节点，从树中移除对应节点
+          if (removedNode.nodeType === 1 || removedNode.nodeType === 3) {
+            // 找到并删除节点
+            const result = removeNodeFromTree(elementTree.value, removedNode as Element | Text);
+            if (result) {
+              hasStructuralChanges = true;
+              console.log('从树中删除了节点:', (removedNode as Element).tagName || '#text');
+            }
+          }
+        }
+      }
+
+      // 处理节点添加
+      if (mutation.addedNodes.length > 0) {
+        // 我们在复制节点时已经处理了添加的情况，不需要在这里处理
+        // 如果是第三方代码添加的节点，由于我们无法确定具体位置，
+        // 这种情况我们暂不特殊处理，留着下次刷新树时自动加载
+      }
+    }
+  }
+
+  // 如果结构发生了变化，更新高亮显示
+  if (hasStructuralChanges && activeElement.value) {
+    // 检查选中的元素是否仍然存在于DOM中
+    try {
+      // 尝试获取元素的父节点，如果元素已被删除，会抛出异常
+      if (!activeElement.value.parentNode) {
+        // 元素已被删除，清除选择
+        clearSelection();
+      } else {
+        // 元素仍存在，重新高亮
+        highlightDomElement(activeElement.value);
+      }
+    } catch (e) {
+      // 如果访问元素属性出错，说明元素已被删除
+      clearSelection();
+    }
+  }
+};
+
+// 从树中删除节点
+const removeNodeFromTree = (nodes: TreeNodeType[], element: Element | Text): boolean => {
+  if (!nodes || nodes.length === 0) return false;
+
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+
+    // 检查当前节点是否是要删除的节点
+    if (node.element === element) {
+      // 如果是当前选中的节点，清除选择
+      if (node.isSelected) {
+        clearSelection();
+        selectedElement.value = null; // 确保selectedElement也被清除
+      }
+
+      // 从父节点的children数组中移除
+      nodes.splice(i, 1);
+      return true;
+    }
+
+    // 递归检查子节点
+    if (node.children && node.children.length > 0) {
+      const removed = removeNodeFromTree(node.children, element);
+      if (removed) return true;
+    }
+  }
+
+  return false;
+};
+
+// 删除节点
+const deleteNode = (): Promise<void> => {
+  console.log('删除节点', contextMenuNode.value?.tagName);
+  if (!contextMenuNode.value || !iframeEntrance.value) return Promise.resolve();
+
+  try {
+    // 获取要删除的DOM元素
+    const elementToDelete = contextMenuNode.value.element;
+    const nodeToDelete = contextMenuNode.value;
+
+    // 如果是当前选中的节点，清除选择
+    if (nodeToDelete.isSelected) {
+      clearSelection();
+      selectedElement.value = null; // 确保selectedElement也被清除
+    }
+
+    // 从DOM中删除元素
+    if (elementToDelete.parentNode) {
+      elementToDelete.parentNode.removeChild(elementToDelete);
+
+      // 不需要手动从树中移除节点，因为我们的MutationObserver会监听到DOM变化并自动处理
+      // 但为了确保UI立即响应，我们还是手动移除节点
+
+      // 找到父节点的子节点数组
+      if (nodeToDelete.parent && nodeToDelete.parent.children) {
+        // 找到要删除的节点在父节点子节点数组中的索引
+        const index = nodeToDelete.parent.children.findIndex(child => child.id === nodeToDelete.id);
+        if (index >= 0) {
+          // 从父节点的children数组中移除
+          nodeToDelete.parent.children.splice(index, 1);
+          console.log('节点删除成功');
+        }
+      } else if (!nodeToDelete.parent && elementTree.value) {
+        // 处理根节点的情况
+        const index = elementTree.value.findIndex(node => node.id === nodeToDelete.id);
+        if (index >= 0) {
+          // 从根节点数组中移除
+          elementTree.value.splice(index, 1);
+          console.log('根节点删除成功');
+        }
+      }
+    }
+  } catch (e) {
+    console.error('删除节点失败:', e);
+  }
+
+  // 关闭右键菜单
+  closeContextMenu();
+  return Promise.resolve();
+};
+
+
 onMounted(() => {
   //iframeEntrance.value 已经是iframe的contentDocument属性了
   if(iframeEntrance.value){
@@ -876,6 +1031,15 @@ onMounted(() => {
 
       // 监听body大小变化
       resizeObserver.observe(body);
+
+      // 监听DOM变化
+      mutationObserver = new MutationObserver(handleDomMutations);
+      mutationObserver.observe(body, {
+        childList: true, // 监听子节点的添加或删除
+        subtree: true,   // 监听所有后代节点
+        attributes: false,
+        characterData: false
+      });
     }
   }
 
@@ -889,10 +1053,9 @@ onMounted(() => {
   document.addEventListener('contextmenu', preventDefaultContextMenu);
 });
 
-// 组件销毁前清理
 onBeforeUnmount(() => {
   // 移除高亮效果
-  removeHighlight();
+  // removeHighlight();
 
   // 清空选中状态
   activeElement.value = null;
@@ -902,6 +1065,12 @@ onBeforeUnmount(() => {
   if (resizeObserver) {
     resizeObserver.disconnect();
     resizeObserver = null;
+  }
+
+  // 断开MutationObserver连接
+  if (mutationObserver) {
+    mutationObserver.disconnect();
+    mutationObserver = null;
   }
 
   // // 移除滚动事件监听器
