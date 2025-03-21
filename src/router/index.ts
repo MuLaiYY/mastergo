@@ -45,7 +45,30 @@ const router = createRouter({
       path:'/login',
       name:'login',
       component:()=>import('@/views/loginView.vue')
-    }
+    },
+    {
+      path:'/ide',
+      name:'ide',
+      component:()=>import('@/views/IDEView.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/profile/setup',
+      name: 'profile-setup',
+      component: () => import('@/views/profileSetupView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/profile',
+      name: 'user-profile',
+      component: () => import('@/views/userProfileView.vue'),
+      meta: { requiresAuth: true }
+    },
+    // {
+    //   path:'/test',
+    //   name:'test',
+    //   component:()=>import('@/components/ai/text.vue')
+    // }
   ],
 })
 

@@ -8,7 +8,7 @@ import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import { getPageById } from '@/api/page'
 import { ElMessage } from 'element-plus'
-
+import { getCurrentUser } from '@/api/user'
 const props = defineProps({
   page: {
     type: Object,
@@ -28,11 +28,196 @@ const userInput = ref('')
 const sendBtn = ref(null)
 const chatContainer = ref(null)
 const isInputEmpty = ref(true) // 新增：跟踪输入是否为空
-const { getResponse } = useQwenAI()
+const { getResponse, optimizePrompt: optimizePromptAPI } = useQwenAI()
 const isEnlarged = ref(false) // 跟踪输入框是否放大
 
 // 新增：存储代码块折叠状态
 const codeFoldStates = ref({})
+
+// 新增：对话上下文，按照通义千问API要求的格式存储对话历史
+const chatContext = ref([])
+
+// 新增：语音识别相关状态
+const isRecording = ref(false)
+const recognition = ref(null)
+const recordingTimeout = ref(null)
+
+// 新增：记录语音识别开始前的文本
+const preSpeechText = ref('')
+
+// 新增：标记是否用户主动停止录音
+const userInitiatedStop = ref(false)
+
+// 新增：初始化语音识别
+const initSpeechRecognition = () => {
+  try {
+    // 检查浏览器是否支持语音识别API
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      console.error('当前浏览器不支持语音识别')
+      return false
+    }
+
+    recognition.value = new SpeechRecognition()
+    recognition.value.continuous = false
+    recognition.value.interimResults = true
+    recognition.value.lang = 'zh-CN' // 设置为中文识别
+
+    // 监听识别结果
+    recognition.value.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join('')
+
+      // 更新输入框内容 - 使用初始文本加上新识别的文本
+      const textarea = document.getElementById('user-input')
+      if (textarea) {
+        // 添加空格分隔符，只有当初始文本不为空时
+        const separator = preSpeechText.value && preSpeechText.value.trim() ? ' ' : ''
+        // 使用初始文本作为基础，而不是当前文本
+        textarea.value = preSpeechText.value + separator + transcript
+        userInput.value = textarea.value
+        isInputEmpty.value = !userInput.value.trim()
+      }
+    }
+
+    // 修改：监听识别结束
+    recognition.value.onend = () => {
+      console.log('语音识别会话结束')
+      // 如果不是用户主动停止且仍在录音状态，则重新启动
+      if (!userInitiatedStop.value && isRecording.value) {
+        console.log('自动重启语音识别')
+        try {
+          // 重要修改：在重新启动前，保存当前文本作为新的初始文本
+          const textarea = document.getElementById('user-input')
+          if (textarea) {
+            preSpeechText.value = textarea.value || ''
+            console.log('更新初始文本为:', preSpeechText.value)
+          }
+
+          // 短暂延迟后重新启动，避免可能的冲突
+          setTimeout(() => {
+            if (isRecording.value) { // 再次检查，确保用户没有在延迟期间松开按钮
+              recognition.value.start()
+            }
+          }, 100)
+        } catch (err) {
+          console.error('重新启动语音识别失败:', err)
+          stopRecording()
+        }
+      } else {
+        stopRecording()
+      }
+    }
+
+    // 监听错误
+    recognition.value.onerror = (event) => {
+      console.error('语音识别错误:', event.error)
+      // 只有特定错误才停止，比如无法识别的语音
+      if (event.error === 'no-speech') {
+        // 无语音时不显示警告，因为这可能是用户停顿
+        console.log('未检测到语音，继续监听')
+      } else {
+        ElMessage.error('语音识别出错，请重试')
+        stopRecording()
+      }
+    }
+
+    return true
+  } catch (err) {
+    console.error('初始化语音识别失败:', err)
+    return false
+  }
+}
+
+// 修改：开始录音
+const startRecording = () => {
+  // 防止重复启动
+  if (isRecording.value) return
+
+  // 重置用户主动停止标记
+  userInitiatedStop.value = false
+
+  // 初始化语音识别
+  if (!recognition.value) {
+    const initialized = initSpeechRecognition()
+    if (!initialized) {
+      ElMessage.error('您的浏览器不支持语音识别')
+      return
+    }
+  }
+
+  try {
+    // 记录开始识别前的文本内容
+    const textarea = document.getElementById('user-input')
+    preSpeechText.value = textarea ? textarea.value : ''
+
+    recognition.value.start()
+    isRecording.value = true
+
+    // 设置最长录音时间（60秒）
+    recordingTimeout.value = setTimeout(() => {
+      userInitiatedStop.value = true // 设置为用户主动停止（超时）
+      stopRecording()
+    }, 60000)
+
+    ElMessage.success('开始录音，请说话...')
+  } catch (err) {
+    console.error('启动语音识别失败:', err)
+    ElMessage.error('启动语音识别失败')
+    stopRecording()
+  }
+}
+
+// 修改：停止录音
+const stopRecording = () => {
+  if (!isRecording.value) return
+
+  try {
+    if (recognition.value) {
+      recognition.value.stop()
+    }
+  } catch (err) {
+    console.error('停止语音识别失败:', err)
+  }
+
+  isRecording.value = false
+
+  // 清除超时计时器
+  if (recordingTimeout.value) {
+    clearTimeout(recordingTimeout.value)
+    recordingTimeout.value = null
+  }
+}
+
+// 修改：语音按钮按下和释放处理
+const handleVoiceButtonDown = () => {
+  startRecording()
+}
+
+const handleVoiceButtonUp = () => {
+  userInitiatedStop.value = true // 设置为用户主动停止
+  stopRecording()
+}
+
+// 新增：初始化聊天上下文，只取最新10条消息
+const initChatContext = () => {
+  // 清空现有上下文
+  chatContext.value = []
+
+  // 获取最新的10条消息
+  const recentMessages = [...chatMsgs.value].slice(-10)
+
+  // 将消息转换为通义千问API所需的格式并添加到上下文
+  recentMessages.forEach(msg => {
+    chatContext.value.push({
+      role: msg.role, // 'user' 或 'assistant'
+      content: msg.content || msg.message // 优先使用content，因为它包含原始文本
+    })
+  })
+
+  console.log('已初始化聊天上下文，包含最新的', chatContext.value.length, '条消息')
+}
 
 // 新增：切换消息中所有代码块的折叠状态
 const toggleCodeFold = (msgId) => {
@@ -59,11 +244,16 @@ const toggleCodeFold = (msgId) => {
   })
 }
 
-// 监听输入变化
-const handleInput = (event) => {
-  userInput.value = event.target.value
-  isInputEmpty.value = !userInput.value.trim() // 更新输入状态
+// 修改监听输入变化函数
+const handleInput = () => {
+  // 直接使用v-model双向绑定，这里只需更新空状态
+  isInputEmpty.value = !userInput.value.trim()
 }
+
+const userData = ref({
+  username: '',
+  personalInfo: {}
+})
 
 onMounted(async () => {
   scrollToBottom()
@@ -73,10 +263,12 @@ onMounted(async () => {
     console.log('开始加载聊天记录')
     await aiChatStore.loadPageChatMessages(aiChatStore.currentPageId)
     console.log('聊天记录加载完成')
+
+    // 初始化聊天上下文，只取最新10条
+    initChatContext()
   }
 
   // 检查是否有初始消息需要发送
-
   const initialMsg = aiChatStore.getAndClearInitialMessage()
   if (initialMsg) {
     // 将初始消息设置到输入框
@@ -93,7 +285,25 @@ onMounted(async () => {
     textarea.addEventListener('input', handleInput)
   }
   hljs.highlightAll()
+
+  // 初始化语音识别
+  initSpeechRecognition()
+
+  //获取用户信息中的用户名，个人信息
+  const res = await getCurrentUser()
+
+  userData.value = {
+    username: res.username,
+    //获取对象中属性值不为空的对象
+    personalInfo: Object.fromEntries(
+        Object.entries(res.personalInfo).filter(([_, value]) => {
+            return value !== "" && (Array.isArray(value) ? value.length > 0 : true);
+        })
+    )
+  }
+  console.log('用户信息:', userData.value)
 })
+
 // 添加滚动到底部的函数
 const scrollToBottom = async () => {
   await nextTick() // 等待 DOM 更新
@@ -102,6 +312,7 @@ const scrollToBottom = async () => {
     container.scrollTop = container.scrollHeight
   }
 }
+
 // 监听消息列表变化，自动滚动到底部
 watch(
   chatMsgs,
@@ -113,6 +324,7 @@ watch(
     immediate: true,
   },
 )
+
 const sendMessage = async () => {
   let trueMessage = ''
 
@@ -142,12 +354,11 @@ const sendMessage = async () => {
       await aiChatStore.loadPageChatMessages(aiChatStore.currentPageId)
     }
 
-    // 立即清空输入框
-    document.getElementById('user-input').value = ''
+    // 修改：直接清空userInput，不再单独操作DOM
     userInput.value = ''
     isInputEmpty.value = true // 更新输入状态为空
 
-    if (selectedElement.value&&isRequireAIChange.value) {
+    if (selectedElement.value && isRequireAIChange.value) {
       trueMessage = `${currentInput} 。待修改组件代码如下：${selectedElement.value.outerHTML}`
     } else {
       trueMessage = currentInput
@@ -163,6 +374,12 @@ const sendMessage = async () => {
       selectedElement: null,
       newElement: null,
       type: 'chat',
+    })
+
+    // 添加用户消息到上下文
+    chatContext.value.push({
+      role: 'user',
+      content: trueMessage
     })
 
     // 创建AI回复消息，初始为空，将通过流式更新
@@ -187,8 +404,9 @@ const sendMessage = async () => {
       ElMessage.error('消息发送失败，但会继续尝试获取AI回复')
     }
 
-    // 获取流式响应
-    const completion = await getResponse(trueMessage)
+    // 获取流式响应，传入完整的对话上下文
+    console.log('发送请求到AI，包含上下文消息数:', chatContext.value.length)
+    const completion = await getResponse(chatContext.value, userData.value)
 
     // 用于累积完整响应的变量
     let fullResponse = ''
@@ -204,17 +422,23 @@ const sendMessage = async () => {
         const msgIndex = chatMsgs.value.findIndex((msg) => msg.id === aiMsgId)
         if (msgIndex !== -1) {
           chatMsgs.value[msgIndex].message = marked.parse(fullResponse)
-          chatMsgs.value[msgIndex].content = marked.parse(fullResponse)
+          chatMsgs.value[msgIndex].content = fullResponse // 存储原始内容
         }
       }
     }
+
+    // 将AI回复添加到上下文
+    chatContext.value.push({
+      role: 'assistant',
+      content: fullResponse
+    })
 
     // 解析AI响应中的HTML和CSS
     const newElement = parseAIResponse(marked.parse(fullResponse))
 
     // 确定消息类型
     let type
-    if (selectedElement.value&&isRequireAIChange.value) {
+    if (selectedElement.value && isRequireAIChange.value) {
       type = 'modify_component'
     } else if (newElement.html !== '') {
       // 检查HTML内容是否包含完整的HTML文档结构
@@ -242,7 +466,7 @@ const sendMessage = async () => {
     }
 
     // 更新最终消息类型和内容
-    const msgIndex = chatMsgs.value.findIndex((msg) => msg.id === aiMsgId)//
+    const msgIndex = chatMsgs.value.findIndex((msg) => msg.id === aiMsgId)
     if (msgIndex !== -1) {
       chatMsgs.value[msgIndex].type = type
       chatMsgs.value[msgIndex].newElement = newElement
@@ -262,7 +486,6 @@ const sendMessage = async () => {
       console.log('检测到生成页面类型，自动渲染页面')
       renderGeneratedPage(chatMsgs.value[msgIndex].id)
     } else if (type === 'modify_component') {
-
       if(chatMsgs.value[msgIndex].newElement.html){
         insertElement(chatMsgs.value[msgIndex].id)
         console.log('检测到修改组件类型,AI已自动修改组件代码')
@@ -373,29 +596,6 @@ function parseAIResponse(response) {
         jsContent = jsText
       }
     }
-
-    // // 如果没有.language-html，则尝试从整个响应中提取
-    // if (!htmlContent) {
-    //   const tempDoc = parser.parseFromString(response, 'text/html')
-    //   const allStyles = tempDoc.querySelectorAll('style')
-    //   const allScripts = tempDoc.querySelectorAll('script')
-
-    //   if (allStyles.length > 0) {
-    //     cssContent = Array.from(allStyles).map(el => {
-    //       const tempDiv = document.createElement('div')
-    //       tempDiv.appendChild(el.cloneNode(true))
-    //       return tempDiv.innerHTML
-    //     }).join('\n\n')
-    //   }
-
-    //   if (allScripts.length > 0) {
-    //     jsContent = Array.from(allScripts).map(el => {
-    //       const tempDiv = document.createElement('div')
-    //       tempDiv.appendChild(el.cloneNode(true))
-    //       return tempDiv.innerHTML
-    //     }).join('\n\n')
-    //   }
-    // }
   }
 
   console.log('提取结果:', { html: htmlContent, css: cssContent, js: jsContent })
@@ -407,8 +607,6 @@ const insertElement = (id) => {
   if (!msg || !msg.selectedElement || !iframeEntrance.value) return
 
   console.log(msg.newElement)
-
-
 
   //关闭ai修改
   setIsRequireAIChange(false)
@@ -454,11 +652,6 @@ const renderGeneratedPage = (id) => {
       // 使用emit事件通知父组件更新内容
       emit('update:content', fullHtmlContent)
     }
-
-    // // 使用srcdoc属性更新iframe内容
-    // if (iframeEntrance.value) {
-    //   iframeEntrance.value.srcdoc = fullHtmlContent
-    // }
 
     // 提示用户保存操作，使用更显眼的提示
     ElMessage({
@@ -515,11 +708,54 @@ const enlargeInput = () => {
     scrollToBottom()
   })
 }
+
+// 添加一个新方法处理prompt优化
+const isOptimizingPrompt = ref(false) // 跟踪优化状态
+
+// 优化按钮点击处理方法
+const optimizePrompt = async () => {
+  // 如果输入为空，不执行优化
+  if (userInput.value.trim() === '') {
+    ElMessage.warning('请先输入内容再优化')
+    return
+  }
+
+  // 设置正在优化状态
+  isOptimizingPrompt.value = true
+
+  try {
+    // 调用qwenAI.js中的优化方法
+    const optimizedPrompt = await optimizePromptAPI(userInput.value, userData.value);
+
+    // 更新输入框内容为优化后的提示词
+    userInput.value = optimizedPrompt.trim();
+    isInputEmpty.value = !userInput.value.trim();
+
+    // 聚焦输入框并触发动画效果
+    const textarea = document.getElementById('user-input');
+    if (textarea) {
+      // 不再需要手动设置textarea.value
+      textarea.focus();
+      textarea.classList.add('optimized');
+      setTimeout(() => {
+        textarea.classList.remove('optimized');
+      }, 1000);
+    }
+
+    ElMessage.success('提示词已优化');
+  } catch (error) {
+    console.error('优化提示词失败:', error);
+    ElMessage.error('优化失败，请重试');
+  } finally {
+    isOptimizingPrompt.value = false;
+  }
+}
 </script>
 
 <template>
   <div class="chat-box">
     <div id="chat-container" ref="chatContainer" :class="{ 'reduced-height': isEnlarged }">
+      <div v-show="chatMsgs.length===0" class="ai-message"> <span class="message-content">hello，{{ userData.username }}，我是智能助手小濑，有什么需要帮助的吗?</span></div>
       <div
         v-for="item in chatMsgs"
         :key="item.id"
@@ -594,9 +830,6 @@ const enlargeInput = () => {
               ></path>
             </svg>
           </button>
-
-
-
         </div>
       </div>
     </div>
@@ -635,15 +868,67 @@ const enlargeInput = () => {
           ></path>
         </svg>
       </div>
-      <div class="input-box">
-        <textarea
-          id="user-input"
-          placeholder="输入你的问题..."
-          @keydown.enter.prevent="!isInputEmpty && sendMessage()"
-        ></textarea>
-        <button id="send-btn" ref="sendBtn" @click="sendMessage" :disabled="isInputEmpty">
-          <img src="@/assets/发送.png" alt="发送" />
-        </button>
+      <div class="input-box" :class="{ 'is-optimizing': isOptimizingPrompt }">
+        <div class="input-wrapper">
+          <textarea
+            id="user-input"
+            v-model="userInput"
+            placeholder="输入你的问题..."
+            @keydown.enter.prevent="!isInputEmpty && sendMessage()"
+            :disabled="isOptimizingPrompt"
+            @input="handleInput"
+          ></textarea>
+          <div v-if="isOptimizingPrompt" class="loading-indicator">
+            <div class="loading-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="loading-text">正在优化提示词...</div>
+          </div>
+        </div>
+
+        <div class="buttons-wrapper">
+          <!-- 优化按钮 - 修改为使用首页样式 -->
+          <button
+            id="optimize-btn"
+            class="tool-button optimize-button"
+            :class="{ 'optimizing': isOptimizingPrompt }"
+            @click="optimizePrompt"
+            :disabled="isInputEmpty || isOptimizingPrompt"
+            title="优化提示词"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 16c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-4.7-3.7c-.4.4-.4 1 0 1.4.4.4 1 .4 1.4 0l.8-.8c.5.3 1 .4 1.5.4V15c0 .6.4 1 1 1s1-.4 1-1v-1.7c1.8-.5 3-2.1 3-4.3 0-2.8-2.2-5-5-5S6 6.2 6 9c0 1.4.6 2.7 1.5 3.6l-.2.7zm4.7-7.3c2.2 0 4 1.8 4 4 0 2.1-1.7 3.9-3.8 4l-.2-2c.5-.1 1-.4 1.4-.8.4-.5.6-1.1.6-1.7 0-1.4-1.1-2.5-2.5-2.5S9 6.1 9 7.5c0 .6.2 1.1.6 1.6l-1.3 1.3c-.5-.7-.8-1.6-.8-2.4 0-2.2 1.8-4 4-4z" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <!-- 语音输入按钮 - 修改为使用首页样式 -->
+          <button
+            id="voice-btn"
+            class="tool-button voice-button"
+            :class="{ 'recording': isRecording }"
+            @mousedown="handleVoiceButtonDown"
+            @mouseup="handleVoiceButtonUp"
+            @mouseleave="stopRecording"
+            @touchstart="handleVoiceButtonDown"
+            @touchend="handleVoiceButtonUp"
+            @touchcancel="stopRecording"
+            :disabled="isOptimizingPrompt"
+          >
+            <svg t="1690860982235" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2760" width="20" height="20">
+              <path d="M512 614.4c93.866667 0 170.666667-76.8 170.666667-170.666667V256c0-93.866667-76.8-170.666667-170.666667-170.666667S341.333333 162.133333 341.333333 256v187.733333c0 93.866667 76.8 170.666667 170.666667 170.666667z" fill="currentColor" p-id="2761"></path>
+              <path d="M682.666667 443.733333c0 93.866667-76.8 170.666667-170.666667 170.666667s-170.666667-76.8-170.666667-170.666667H256c0 128 93.866667 234.666667 213.333333 256v153.6h85.333334v-153.6c119.466667-21.333333 213.333333-128 213.333333-256h-85.333333z" fill="currentColor" p-id="2762"></path>
+            </svg>
+          </button>
+
+          <!-- 发送按钮 - 修改为使用首页样式 -->
+          <button id="send-btn" ref="sendBtn" @click="sendMessage" :disabled="isInputEmpty || isOptimizingPrompt" class="send-button">
+            <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"></path>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -767,73 +1052,186 @@ const enlargeInput = () => {
 
     .input-box {
       border: 1px solid rgba(139, 92, 246, 0.15);
-      border-radius: 16px;
-      padding: 0.75rem 1rem;
+      border-radius: 18px;
       position: relative;
       width: 100%;
       height: calc(100% - 30px);
       transition: all 0.3s ease;
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.9);
       backdrop-filter: blur(12px);
       box-shadow: 0 4px 20px -2px rgba(139, 92, 246, 0.08);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
 
-      &:hover {
+      &:hover:not(.is-optimizing) {
         border-color: rgba(139, 92, 246, 0.3);
         box-shadow: 0 6px 24px -4px rgba(139, 92, 246, 0.12);
       }
 
-      textarea {
-        width: calc(100% - 40px);
-        height: 80%;
-        font-size: 0.95rem;
-        font-weight: 400;
-        color: rgba(76, 29, 149, 0.9);
-        line-height: 1.5;
-        padding: 0.5rem;
-        resize: none;
-        border: none;
-        outline: none;
-        background: transparent;
+      /* 优化中的状态 */
+      &.is-optimizing {
+        background: rgba(243, 242, 255, 0.95);
+        border-color: rgba(139, 92, 246, 0.3);
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+      }
 
-        &::placeholder {
-          color: rgba(139, 92, 246, 0.4);
+      .input-wrapper {
+        flex: 1;
+        position: relative;
+        padding: 0.75rem 1rem 0.5rem;
+
+        textarea {
+          width: 100%;
+          height: 100%;
+          font-size: 0.95rem;
+          font-weight: 400;
+          color: rgba(76, 29, 149, 0.9);
+          line-height: 1.5;
+          padding: 0.5rem;
+          resize: none;
+          border: none;
+          outline: none;
+          background: transparent;
+          border-radius: 12px;
+          transition: all 0.3s ease;
+
+          &::placeholder {
+            color: rgba(139, 92, 246, 0.4);
+          }
+
+          &:disabled {
+            color: rgba(76, 29, 149, 0.6);
+            cursor: not-allowed;
+          }
+
+          &.optimized {
+            animation: highlight 1s ease;
+          }
+        }
+
+        /* Loading指示器 */
+        .loading-indicator {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: rgba(243, 242, 255, 0.85);
+          backdrop-filter: blur(3px);
+          border-radius: 16px;
+          z-index: 2;
+          pointer-events: none;
+
+          .loading-text {
+            color: rgba(139, 92, 246, 0.8);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+          }
+
+          .loading-dots {
+            display: flex;
+            gap: 0.25rem;
+
+            span {
+              width: 8px;
+              height: 8px;
+              border-radius: 50%;
+              background-color: rgba(139, 92, 246, 0.6);
+              display: inline-block;
+              animation: loadingDots 1.4s infinite ease-in-out both;
+
+              &:nth-child(1) {
+                animation-delay: -0.32s;
+              }
+
+              &:nth-child(2) {
+                animation-delay: -0.16s;
+              }
+            }
+          }
         }
       }
 
-      button {
-        position: absolute;
-        right: 0.75rem;
-        bottom: 0.75rem;
-        width: 32px;
-        height: 32px;
-        padding: 6px;
-        border: none;
-        border-radius: 8px;
-        background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9));
-        cursor: pointer;
-        transition: all 0.3s ease;
+      /* 按钮容器 */
+      .buttons-wrapper {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0.5rem 0.75rem;
+        gap: 0.5rem;
+        background: rgba(249, 248, 255, 0.8);
+        border-top: 1px solid rgba(139, 92, 246, 0.08);
+      }
 
-        &:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.3);
-          background: linear-gradient(135deg, rgba(139, 92, 246, 1), rgba(236, 72, 153, 1));
+      /* 工具按钮样式 - 使用首页样式 */
+      .tool-button {
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        color: #6d28d9;
+        padding: 8px;
+        border-radius: 12px;
+        cursor: pointer;
+        margin-right: 0; /* 移除margin-right，使用gap代替 */
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+          background-color: rgba(139, 92, 246, 0.15);
+          border-color: rgba(139, 92, 246, 0.3);
+          transform: translateY(-2px);
         }
 
         &:disabled {
-          opacity: 0.5;
+          opacity: 0.4;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        &.recording {
+          color: white;
+          background: linear-gradient(135deg, rgba(220, 38, 38, 0.8), rgba(239, 68, 68, 0.8));
+          animation: pulse 1s infinite;
+        }
+
+        &.optimizing {
+          animation: spin 1.5s linear infinite;
+        }
+      }
+
+      /* 发送按钮样式 - 使用首页样式 */
+      .send-button {
+        background: linear-gradient(135deg, #8b5cf6, #c084fc);
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 12px;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2);
+        width: 36px;
+        height: 36px;
+
+        &:hover:not(:disabled) {
+          transform: translateY(-2px) translateX(2px);
+          box-shadow: 0 6px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        &:disabled {
+          background: rgba(139, 92, 246, 0.2);
           cursor: not-allowed;
           transform: none;
           box-shadow: none;
-        }
-
-        img {
-          width: 100%;
-          height: 100%;
-          transition: transform 0.3s ease;
-        }
-
-        &:hover img {
-          transform: scale(1.1);
         }
       }
     }
@@ -952,4 +1350,38 @@ const enlargeInput = () => {
     }
   }
 }
+
+/* 动画效果 */
+@keyframes highlight {
+  0% { background-color: rgba(139, 92, 246, 0.1); }
+  100% { background-color: transparent; }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes loadingDots {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+/* 移除不再需要的控制按钮样式 */
+// .control-btn 样式被移除，使用 .tool-button 和 .send-button 代替
 </style>

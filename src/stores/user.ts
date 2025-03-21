@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { authApi } from '@/api';
+import type { UserData } from '@/api/user';
 
 interface UserState {
   user: {
@@ -45,7 +46,22 @@ export const useUserStore = defineStore('mastergo-user', {
         console.log('开始登录请求');
         const response = await authApi.login({ email, password });
         console.log('登录响应:', response);
-        this.setUserData(response);
+
+        if (response && response.token) {
+          // 调整为符合期望格式的数据结构
+          this.setUserData({
+            user: {
+              _id: response._id,
+              username: response.username,
+              email: response.email,
+              role: response.role
+            },
+            token: response.token
+          });
+        } else {
+          console.error('登录响应缺少必要数据:', response);
+        }
+
         return response;
       } catch (error) {
         console.error('登录错误:', error);
@@ -58,7 +74,22 @@ export const useUserStore = defineStore('mastergo-user', {
         console.log('开始注册请求');
         const response = await authApi.register({ username, email, password });
         console.log('注册响应:', response);
-        this.setUserData(response);
+
+        if (response && response.token) {
+          // 调整为符合期望格式的数据结构
+          this.setUserData({
+            user: {
+              _id: response._id,
+              username: response.username,
+              email: response.email,
+              role: response.role
+            },
+            token: response.token
+          });
+        } else {
+          console.error('注册响应缺少必要数据:', response);
+        }
+
         return response;
       } catch (error) {
         console.error('注册错误:', error);

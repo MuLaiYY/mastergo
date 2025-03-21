@@ -414,6 +414,147 @@
         </div>
       </div>
 
+      <!-- 布局设置 - 仅在选中的元素是div或section时显示 -->
+      <div v-if="selectedElement?.tagName === 'DIV' || selectedElement?.tagName === 'SECTION'" class="mb-6">
+        <h3 class="text-md font-medium mb-2 border-b pb-1">布局设置</h3>
+
+        <!-- 布局类型 -->
+        <div class="mb-3">
+          <label class="block text-sm mb-1">布局类型</label>
+          <select
+            v-model="layoutType"
+            class="border rounded px-2 py-1 text-sm w-full"
+            @change="updateElementClass('layout')"
+          >
+            <option value="">默认</option>
+            <option value="flex">Flex布局</option>
+            <option value="grid">Grid布局</option>
+          </select>
+        </div>
+
+        <!-- Flex布局配置 -->
+        <div v-if="layoutType === 'flex'" class="space-y-3">
+          <div>
+            <label class="block text-sm mb-1">主轴方向</label>
+            <select
+              v-model="flexDirection"
+              class="border rounded px-2 py-1 text-sm w-full"
+              @change="updateElementClass('flexDirection')"
+            >
+              <option value="flex-row">水平方向</option>
+              <option value="flex-col">垂直方向</option>
+              <option value="flex-row-reverse">水平反向</option>
+              <option value="flex-col-reverse">垂直反向</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">主轴对齐</label>
+            <select
+              v-model="justifyContent"
+              class="border rounded px-2 py-1 text-sm w-full"
+              @change="updateElementClass('justifyContent')"
+            >
+              <option value="justify-start">左对齐</option>
+              <option value="justify-center">居中</option>
+              <option value="justify-end">右对齐</option>
+              <option value="justify-between">两端对齐</option>
+              <option value="justify-around">环绕对齐</option>
+              <option value="justify-evenly">均匀对齐</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">交叉轴对齐</label>
+            <select
+              v-model="alignItems"
+              class="border rounded px-2 py-1 text-sm w-full"
+              @change="updateElementClass('alignItems')"
+            >
+              <option value="items-start">顶部对齐</option>
+              <option value="items-center">居中对齐</option>
+              <option value="items-end">底部对齐</option>
+              <option value="items-stretch">拉伸对齐</option>
+              <option value="items-baseline">基线对齐</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">换行方式</label>
+            <select
+              v-model="flexWrap"
+              class="border rounded px-2 py-1 text-sm w-full"
+              @change="updateElementClass('flexWrap')"
+            >
+              <option value="flex-nowrap">不换行</option>
+              <option value="flex-wrap">换行</option>
+              <option value="flex-wrap-reverse">反向换行</option>
+            </select>
+          </div>
+
+          <!-- 添加间隙控制 -->
+          <div>
+            <label class="block text-sm mb-1">间隙</label>
+            <div class="flex items-center">
+              <select
+                v-model="flexGap"
+                class="border rounded px-2 py-1 text-sm w-full"
+                @change="flexGap === 'custom' ? null : updateElementClass('flexGap')"
+              >
+                <option value="">无间隙</option>
+                <option value="gap-1">小间隙</option>
+                <option value="gap-2">中等间隙</option>
+                <option value="gap-4">大间隙</option>
+                <option value="gap-6">特大间隙</option>
+                <option value="custom">自定义</option>
+              </select>
+              <input
+                v-if="flexGap === 'custom'"
+                v-model="customFlexGap"
+                type="number"
+                class="border rounded px-2 py-1 w-16 text-sm ml-2"
+                placeholder="px"
+                @change="updateElementClass('customFlexGap')"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid布局配置 -->
+        <div v-if="layoutType === 'grid'" class="space-y-3">
+          <div>
+            <label class="block text-sm mb-1">列数</label>
+            <select
+              v-model="gridCols"
+              class="border rounded px-2 py-1 text-sm w-full"
+              @change="updateElementClass('gridCols')"
+            >
+              <option value="grid-cols-1">1列</option>
+              <option value="grid-cols-2">2列</option>
+              <option value="grid-cols-3">3列</option>
+              <option value="grid-cols-4">4列</option>
+              <option value="grid-cols-5">5列</option>
+              <option value="grid-cols-6">6列</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">行间距</label>
+            <select
+              v-model="gridGap"
+              class="border rounded px-2 py-1 text-sm w-full"
+              @change="updateElementClass('gridGap')"
+            >
+              <option value="gap-0">无间距</option>
+              <option value="gap-1">小间距</option>
+              <option value="gap-2">中等间距</option>
+              <option value="gap-4">大间距</option>
+              <option value="gap-6">特大间距</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <!-- 图片设置 - 仅在选中的元素是图片时显示 -->
       <div v-if="selectedElement?.tagName === 'IMG'" class="mb-6">
         <h3 class="text-md font-medium mb-2 border-b pb-1">图片设置</h3>
@@ -484,6 +625,22 @@
           </select>
         </div>
       </div>
+      <div v-if="selectedElement!==null&&allowChangeWordArr.includes(selectedElement.tagName)">
+        <h3 class="text-md font-medium mb-2 border-b pb-1">文字修改</h3>
+        <div class="mb-3">
+          <label class="block text-sm mb-1">文字内容</label>
+          <div class="flex items-center">
+            <input
+              v-model="elementText"
+              type="text"
+              class="border rounded px-2 py-1 text-sm w-full"
+              placeholder="请输入文字内容"
+              @change="updateElementText"
+            />
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -496,6 +653,8 @@ import { watch, ref, computed, onMounted, onBeforeUnmount } from 'vue';
 
 const aiChatStore = useAiChatStore();
 const { selectedElement } = storeToRefs(aiChatStore);
+//可更改文字内容的标签
+const allowChangeWordArr=['SPAN','P','H1','H2','H3','H4','H5','H6']
 
 // 尺寸属性
 //宽度类型有固定px w-auto 百分比
@@ -542,10 +701,26 @@ const marginUnit = ref<'px' | 'rem'>('rem');
 const currentClasses = ref<string[]>([]);
 
 // 图片相关属性
-const imgSrc = ref('');
+const imgSrc = ref<string|null>('');
 const objectFit = ref('object-contain');
 const objectPosition = ref('object-center');
 const filter = ref('');
+
+// 文字内容
+const elementText = ref('');
+
+// 布局相关属性
+const layoutType = ref('');
+const flexDirection = ref('flex-row');
+const justifyContent = ref('justify-start');
+const alignItems = ref('items-start');
+const flexWrap = ref('flex-nowrap');
+const gridCols = ref('grid-cols-1');
+const gridGap = ref('gap-0');
+
+// 在 script setup 部分添加新的响应式变量
+const flexGap = ref('');
+const customFlexGap = ref(4);
 
 // 解析当前元素的类并设置对应的配置值
 const parseElementClasses = () => {
@@ -595,16 +770,23 @@ const parseElementClasses = () => {
     objectPosition.value = 'object-center';
     filter.value = '';
 
+    // 重置文字内容
+    elementText.value = '';
+
+    // 重置布局属性
+    layoutType.value = '';
+    flexDirection.value = 'flex-row';
+    justifyContent.value = 'justify-start';
+    alignItems.value = 'items-start';
+    flexWrap.value = 'flex-nowrap';
+    gridCols.value = 'grid-cols-1';
+    gridGap.value = 'gap-0';
+
     // 直接使用selectedElement作为元素引用
     const element = selectedElement.value;
 
     // 获取元素的类列表
     currentClasses.value = element.className.split(' ');
-
-    // 如果是图片元素，获取src属性
-    if (element.tagName === 'IMG') {
-      imgSrc.value = element.getAttribute('src') || '';
-    }
 
     // 解析宽度
     const widthClass = currentClasses.value.find(cls => /^w-/.test(cls));
@@ -625,8 +807,11 @@ const parseElementClasses = () => {
     if (heightClass) {
       if (heightClass === 'h-full' || heightClass === 'h-auto') {
         heightType.value = heightClass;
-      } else if (heightClass.startsWith('h-')) {
-        heightType.value = 'h';
+      } else if (heightClass.startsWith('w-') && heightClass.includes('px')) {
+        heightType.value = 'h-px';
+      } else if (heightClass.startsWith('w-') && heightClass.includes('%')) {
+        heightType.value = 'h-percent';
+      }else {
 
       }
     }
@@ -897,6 +1082,9 @@ const parseElementClasses = () => {
       }
     }
 
+if(selectedElement.value.tagName==='IMG'){
+  imgSrc.value=selectedElement.value.getAttribute('src')
+}
     // 解析图片适应方式
     const objectFitClass = currentClasses.value.find(cls =>
       cls.startsWith('object-contain') ||
@@ -931,6 +1119,51 @@ const parseElementClasses = () => {
       cls === 'sepia');
     if (filterClass) {
       filter.value = filterClass;
+    }
+
+    // 如果是可编辑文字的元素，获取其文本内容
+    if (allowChangeWordArr.includes(element.tagName)) {
+      elementText.value = element.textContent || '';
+    }
+
+    // 解析布局类型
+    if (currentClasses.value.includes('flex')) {
+      layoutType.value = 'flex';
+      // 解析flex相关属性
+      const flexDir = currentClasses.value.find(cls => cls.startsWith('flex-') &&
+        (cls.includes('row') || cls.includes('col')));
+      if (flexDir) flexDirection.value = flexDir;
+
+      const justify = currentClasses.value.find(cls => cls.startsWith('justify-'));
+      if (justify) justifyContent.value = justify;
+
+      const align = currentClasses.value.find(cls => cls.startsWith('items-'));
+      if (align) alignItems.value = align;
+
+      const wrap = currentClasses.value.find(cls => cls.startsWith('flex-wrap'));
+      if (wrap) flexWrap.value = wrap;
+
+      // 解析间隙
+      const gapClass = currentClasses.value.find(cls => cls.startsWith('gap-'));
+      if (gapClass) {
+        if (gapClass.startsWith('gap-[')) {
+          const match = gapClass.match(/gap-\[(\d+)px\]/);
+          if (match) {
+            flexGap.value = 'custom';
+            customFlexGap.value = parseInt(match[1]);
+          }
+        } else {
+          flexGap.value = gapClass;
+        }
+      }
+    } else if (currentClasses.value.includes('grid')) {
+      layoutType.value = 'grid';
+      // 解析grid相关属性
+      const cols = currentClasses.value.find(cls => cls.startsWith('grid-cols-'));
+      if (cols) gridCols.value = cols;
+
+      const gap = currentClasses.value.find(cls => cls.startsWith('gap-'));
+      if (gap) gridGap.value = gap;
     }
 
   } catch (error) {
@@ -1362,6 +1595,86 @@ const updateElementClass = (property: string) => {
 
         element.className = filteredFilterClasses.join(' ');
         break;
+
+      case 'layout':
+        // 移除旧的布局类
+        const filteredLayoutClasses = classList.filter(cls =>
+          !cls.startsWith('flex') &&
+          !cls.startsWith('grid') &&
+          !cls.startsWith('justify-') &&
+          !cls.startsWith('items-') &&
+          !cls.startsWith('gap-'));
+
+        // 添加新的布局类
+        if (layoutType.value === 'flex') {
+          filteredLayoutClasses.push('flex', flexDirection.value, justifyContent.value, alignItems.value, flexWrap.value);
+        } else if (layoutType.value === 'grid') {
+          filteredLayoutClasses.push('grid', gridCols.value, gridGap.value);
+        }
+
+        element.className = filteredLayoutClasses.join(' ');
+        break;
+
+      case 'flexDirection':
+        // 更新flex方向
+        const filteredFlexDirClasses = classList.filter(cls =>
+          !cls.startsWith('flex-') || !(cls.includes('row') || cls.includes('col')));
+        filteredFlexDirClasses.push(flexDirection.value);
+        element.className = filteredFlexDirClasses.join(' ');
+        break;
+
+      case 'justifyContent':
+        // 更新主轴对齐
+        const filteredJustifyClasses = classList.filter(cls => !cls.startsWith('justify-'));
+        filteredJustifyClasses.push(justifyContent.value);
+        element.className = filteredJustifyClasses.join(' ');
+        break;
+
+      case 'alignItems':
+        // 更新交叉轴对齐
+        const filteredAlignClasses = classList.filter(cls => !cls.startsWith('items-'));
+        filteredAlignClasses.push(alignItems.value);
+        element.className = filteredAlignClasses.join(' ');
+        break;
+
+      case 'flexWrap':
+        // 更新换行方式
+        const filteredWrapClasses = classList.filter(cls => !cls.startsWith('flex-wrap'));
+        filteredWrapClasses.push(flexWrap.value);
+        element.className = filteredWrapClasses.join(' ');
+        break;
+
+      case 'gridCols':
+        // 更新网格列数
+        const filteredGridColsClasses = classList.filter(cls => !cls.startsWith('grid-cols-'));
+        filteredGridColsClasses.push(gridCols.value);
+        element.className = filteredGridColsClasses.join(' ');
+        break;
+
+      case 'gridGap':
+        // 更新网格间距
+        const filteredGridGapClasses = classList.filter(cls => !cls.startsWith('gap-'));
+        filteredGridGapClasses.push(gridGap.value);
+        element.className = filteredGridGapClasses.join(' ');
+        break;
+
+      case 'flexGap':
+        // 更新间隙
+        const filteredGapClasses = classList.filter(cls => !cls.startsWith('gap-'));
+        if (flexGap.value) {
+          filteredGapClasses.push(flexGap.value);
+        }
+        element.className = filteredGapClasses.join(' ');
+        break;
+
+      case 'customFlexGap':
+        // 更新自定义间隙
+        const filteredCustomGapClasses = classList.filter(cls => !cls.startsWith('gap-'));
+        if (customFlexGap.value > 0) {
+          filteredCustomGapClasses.push(`gap-[${customFlexGap.value}px]`);
+        }
+        element.className = filteredCustomGapClasses.join(' ');
+        break;
     }
 
     // 更新当前类列表
@@ -1388,6 +1701,20 @@ const updateElementAttr = (attr: string) => {
     }
   } catch (error) {
     console.error('更新元素属性时出错:', error);
+  }
+};
+
+// 更新元素文本内容
+const updateElementText = () => {
+  if (!selectedElement.value) return;
+
+  try {
+    const element = selectedElement.value;
+    if (allowChangeWordArr.includes(element.tagName)) {
+      element.textContent = elementText.value;
+    }
+  } catch (error) {
+    console.error('更新元素文本时出错:', error);
   }
 };
 

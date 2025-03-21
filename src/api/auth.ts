@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-// 设置基础URL
-const API_URL = 'http://localhost:3000/api';
+import { API_URL } from './config';
 
 // 定义接口类型
 interface LoginData {
@@ -34,6 +32,18 @@ interface UserData {
   email: string;
   role: string;
   token: string;
+  personalInfo?: {
+    age?: number;
+    gender?: string;
+    occupation?: string;
+    industry?: string;
+    experience?: string;
+    interests?: string[];
+    preferredStyles?: string[];
+    favoriteColors?: string[];
+    designPreferences?: string;
+    bio?: string;
+  };
 }
 
 /**

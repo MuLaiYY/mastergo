@@ -33,8 +33,8 @@ export const platformTypes = {
     description: '适用于在线教育、培训平台的组件'
   },
   ecommerce: {
-    name: '电子商务',
-    description: '适用于电商网站的组件'
+    name: '智能家居',
+    description: '适用于智能家居的组件'
   },
   blog: {
     name: '个人博客',

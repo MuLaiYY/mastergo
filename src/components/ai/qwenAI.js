@@ -50,7 +50,7 @@ const example = `<!DOCTYPE html>
 </html>`
 
 
-const requirement1 = `当用户需要你生成组件、或者修改组件（例如用户说"添加如下效果"、"修改样式"、"添加点击事件"等包含"添加"、"修改"、"添加效果"、"修改样式"、"添加事件"等关键词的请求）时，执行如下要求：必须使用tailwindcss，若需要增加新的样式类，则必须在类名中包含随机编码（即类的唯一标识），让类不会重名。并且html部分用三个反引号包裹，并标注为html;如果新增了类，则用三个反引号包裹，并标注为css;如果新增了js代码，则用三个反引号包裹，并标注为js。不过用户如果没让你改的话，你不要自己改，只回答用户的问题。`
+const requirement1 = `当用户需要你生成某种组件（列如用户说"生成一个课程卡片组件"、"生成一个手风琴组件"等等）、或者修改某个组件（例如用户说"添加如下效果"、"修改样式"、"添加点击事件"等包含"添加"、"修改"、"添加效果"、"修改样式"、"添加事件"等关键词的请求）时，执行如下要求：必须使用tailwindcss，若需要增加新的样式类，则必须在类名中包含随机编码（即类的唯一标识），让类不会重名。并且html部分用三个反引号包裹，并标注为html;如果新增了类，则用三个反引号包裹，并标注为css;如果新增了js代码，则用三个反引号包裹，并标注为js。不过用户如果没让你改的话，你不要自己改，只回答用户的问题。`
 //需求2：
 const requirement2 = `当用户只是和你聊天，不需要你生成或者修改代码时，那就陪用户聊聊天，或者根据上下文，给用户一些建议。`
 //需求3：
@@ -67,43 +67,33 @@ export const useQwenAI = () => {
     baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     dangerouslyAllowBrowser: true,
   })
-  let messages = [
-    {
-      role: 'system',
-      content: `你是动态界面交互系统的设计助手牧濑，你需要解决他们使用该系统设计页面时的问题，也可以和他们交流互动。
-      要求1：${requirement1}。
-      要求2：${requirement2}。
-      要求3：${requirement3}。
 
-        `,
-    },
-  ]
-  async function getResponse(message) {
-    //消息体里追加一条用户消息
-    // messages.push({ role: 'user', content: message })
+  async function getResponse(message, userData) {
+
     try {
       const completion = await openai.chat.completions.create({
-        model: 'qwen-coder-plus', //模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
+        model: 'qwen-max', //模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
         messages: [
           {
             role: 'system',
-            content: `你是动态界面交互系统的设计助手牧濑，你需要解决他们使用该系统设计页面时的问题，也可以和他们交流互动。
+            content: `你是动态界面交互系统的设计助手牧濑，你需要解决用户使用该系统设计页面时的问题，也可以和用户交流互动。
+            你现在所对话的用户是：${userData.username}，用户信息如下：${JSON.stringify(userData.personalInfo)}。
+            你要根据用户的需求和个人信息，给出最合适的建议以及解释。
+            另外你还有三个系统要求：
             要求1：${requirement1}。
             要求2：${requirement2}。
             要求3：${requirement3}。
               `,
           },
-          { role: 'user', content: message },
+          ...message,
         ],
-        // response_format: {
-        //   type: 'json_object',
-        // },
         stream: true,
         stream_options: {
           include_usage: true,
         },
+        enable_search:true
       })
-      // const jsonString = completion.choices[0].message.content
+      console.log('messages', message)
       return completion
     } catch (error) {
       console.error('Error fetching response:', error)
@@ -111,8 +101,47 @@ export const useQwenAI = () => {
     }
   }
 
+  // 新增：提示词优化方法 - 非流式响应
+  async function optimizePrompt(prompt, userData) {
+    try {
+      // 构建优化请求参数
+      const requestBody = {
+        model: 'qwen-max',
+        messages: [
+          {
+            role: 'system',
+            content: `你是一个专业的AI提示词优化专家，可以将用户的简单输入转化为结构化、详细的提示词。当前场景：用户正在和一个AI页面生成助手对话，用户正在描述自己想要创建的页面或网站或者想要生成或修改的组件。优化时，保持用户原始意图，但添加更多细节、约束和指导。
+            用户信息如下：${JSON.stringify(userData.personalInfo)}。
+            你要根据用户的需求和个人信息，给出最合适的优化后的提示词。
+
+            `
+
+          },
+          {
+            role: 'user',
+            content: `请优化以下提示词，使其更加详细、明确和有效：\n\n"${prompt}"\n\n只返回优化后的提示词内容，不要解释。`
+          }
+        ],
+        stream: false // 关闭流式响应
+      };
+
+      // 发起API请求
+      const completion = await openai.chat.completions.create(requestBody);
+
+      // 从响应中提取优化后的提示词
+      if (completion && completion.choices && completion.choices.length > 0) {
+        return completion.choices[0].message.content;
+      } else {
+        throw new Error('API返回数据格式不正确');
+      }
+    } catch (error) {
+      console.error('优化提示词时出错:', error);
+      throw error;
+    }
+  }
+
   return {
     getResponse,
-    messages,
+    optimizePrompt
   }
 }

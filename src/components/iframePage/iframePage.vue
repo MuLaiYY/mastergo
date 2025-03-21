@@ -119,8 +119,7 @@ const props = defineProps({
 //#region 元素信息展示模块
 
 const initHoverAndLeaveEffect = (iframeDocument) => {
-  console.log('iframe重新加载了')
-  console.log(myIframe.value.contentDocument)
+
 
   //禁止#号跳转
   const aTags = iframeDocument.querySelectorAll('a')
@@ -1270,7 +1269,14 @@ const AIChange = () => {
 }
 let lastSelectedElement = null
 const treeClick = (e) => {
-  //如果开启了元素选择，则可以点击元素
+  //先把有高亮的去掉
+  const highLightedElements= myIframe.value.contentDocument.querySelectorAll('.special-hover-highlight')
+  for(let i=0;i<highLightedElements.length;i++)
+  {
+    highLightedElements[i].classList.remove('special-hover-highlight')
+  }
+
+//如果开启了元素选择，则可以点击元素
   if (isAllowSelectElement.value) {
     //设置被点击元素（即被选中元素）
     setSelectedElement(e.target)
@@ -1288,7 +1294,37 @@ const treeClick = (e) => {
     }
   }
 }
+//给body的每个直接子元素之间创建一个div，用于拖拽
+const isNeedInsertDivGap=(iframeDocument)=>{
 
+      return !iframeDocument.querySelector("[data-extraDiv='extraDiv']")
+}
+const insertDivGap = (iframeDocument) => {
+  // 遍历 body 的直接子元素
+  const children = iframeDocument.body.children;
+
+  // 从后向前遍历，避免动态插入影响索引
+  for (let i = children.length - 1; i > 0; i--) {
+    // 创建一个新的 div 分隔符
+    const divGap = iframeDocument.createElement('div');
+    divGap.className = 'w-[100%] h-[2px]';
+    divGap.setAttribute('data-extraDiv', 'extraDiv');
+    // divGap.textContent = '--- 分隔符 ---'; // 可选：设置内容
+
+    // 在当前子元素之前插入分隔符
+    iframeDocument.body.insertBefore(divGap, children[i]);
+  }
+};
+
+//复制元素功能
+const copyElement=()=>{
+  selectedElement.value.classList.remove('special-hover-highlight')
+  const clonedElement=selectedElement.value.cloneNode(true)
+  selectedElement.value.after(clonedElement)
+  setSelectedElement(clonedElement)
+  selectedElement.value.classList.add('special-hover-highlight')
+
+}
 //只有在iframeload完毕之后才可对其进行操作
 
 // 简化iframeLoad函数，移除重复的监听
@@ -1299,8 +1335,11 @@ const iframeLoad = () => {
   isDrag.value = false
   const iframeWindow = myIframe.value.contentWindow
   const iframeDocument = myIframe.value.contentDocument
+  console.log('iframe重新加载了',iframeDocument)
+
   setIframeEntrance(iframeDocument)
 
+  isNeedInsertDivGap(iframeDocument)&& insertDivGap(iframeDocument)
   initHoverAndLeaveEffect(iframeDocument)
   initContextMenu(iframeWindow, iframeDocument)
   //通知元素树现在点击的元素
@@ -1357,7 +1396,7 @@ const defaultIframeContent = `
 </head>
 <body>
   <div class="container">
-    <div class="spinner"></div>
+
     <div class="message">开始您的创作之旅...</div>
     <div class="tip">可以使用右侧AI助手，直接输入您的需求来生成页面</div>
   </div>
@@ -1393,6 +1432,7 @@ defineExpose({})
       </button> -->
       <button class="menu-item" @click="allowRotate" :disabled="!isAllowSelectElement||!selectedElement">旋转</button>
       <button class="menu-item" @click="allowScale" :disabled="!isAllowSelectElement||!selectedElement">放缩</button>
+      <button class="menu-item" @click="copyElement" :disabled="!isAllowSelectElement||!selectedElement">复制</button>
       <button
         class="menu-item"
         @click="changeDrag"

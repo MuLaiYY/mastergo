@@ -117,7 +117,7 @@ const platforms = ref<Platform[]>([
   },
   {
     id: 'ecommerce',
-    name: '电商网站',
+    name: '智能家居',
     icon: 'fas fa-shopping-cart',
     available: false
   },

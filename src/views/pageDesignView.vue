@@ -133,6 +133,7 @@ import ComponentArea from '@/components/componentArea/componentArea.vue';
 import TemplatePage from '@/components/templatePage.vue';
 import ElementTree from '@/components/elementTree.vue';
 import PropertyConfig from '@/components/propertyConfig.vue';
+import { storeToRefs } from 'pinia';
 // 路由和页面ID
 const route = useRoute();
 const router = useRouter();
@@ -142,6 +143,7 @@ const pageId = computed(() => route.params.pageId as string);
 // 初始化存储
 const aiChatStore = useAiChatStore();
 const {setSelectedElement} = aiChatStore
+const {iframeEntrance}=storeToRefs(aiChatStore)
 // 页面数据
 const page = ref<Page | null>(null);
 const isLoading = ref(true);
@@ -201,7 +203,8 @@ const savePage = async () => {
   isSaving.value = true;
   try {
     // 确保使用最新的内容
-    const currentContent = page.value.htmlContent;
+    page.value.htmlContent=iframeEntrance.value?iframeEntrance.value.documentElement.outerHTML:page.value.htmlContent
+    const currentContent =page.value.htmlContent;
 
     console.log('正在保存HTML内容:', {
       pageId: pageId.value,
@@ -232,7 +235,7 @@ const savePage = async () => {
 // 预览页面
 const previewPage = () => {
   // 检查是否有内容可以预览
-  const content = page.value?.htmlContent || '';
+  const content =  iframeEntrance.value?.documentElement.outerHTML|| '';
 
   if (content) {
     // 创建一个新窗口并写入内容
@@ -287,6 +290,9 @@ onMounted(async () => {
 onBeforeUnmount(()=>{
   setSelectedElement(null)
 })
+
+//操作撤回
+
 </script>
 
 <style scoped lang="less">

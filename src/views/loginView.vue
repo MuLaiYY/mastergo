@@ -305,6 +305,7 @@ import {
   Facebook as FacebookIcon,
   User as UserIcon
 } from 'lucide-vue-next';
+import { checkAndRedirectToProfileSetup } from '@/utils/userUtils';
 
 // 路由和状态管理
 const router = useRouter();
@@ -492,8 +493,13 @@ const handleLogin = async () => {
     // 获取重定向URL（如果有）
     const redirectPath = router.currentRoute.value.query.redirect as string || '/';
 
-    // 登录成功后跳转到重定向页面或首页
-    router.push(redirectPath);
+    // 检查用户是否已填写个人资料，如果没有则跳转到个人资料填写页面
+    const redirected = await checkAndRedirectToProfileSetup(router);
+
+    // 如果没有被重定向到个人资料页面，则跳转到原定的重定向页面或首页
+    if (!redirected) {
+      router.push(redirectPath);
+    }
   } catch (error: any) {
     console.error('登录失败:', error);
 
@@ -537,13 +543,10 @@ const handleRegister = async () => {
       registerForm.password
     );
 
-    ElMessage.success('注册成功');
+    ElMessage.success('注册成功，请完善您的个人资料');
 
-    // 获取重定向URL（如果有）
-    const redirectPath = router.currentRoute.value.query.redirect as string || '/';
-
-    // 注册成功后跳转到重定向页面或首页
-    router.push(redirectPath);
+    // 注册成功后直接跳转到个人资料填写页面
+    router.push('/profile/setup');
   } catch (error: any) {
     console.error('注册失败:', error);
 

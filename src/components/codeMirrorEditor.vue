@@ -18,7 +18,10 @@ import 'codemirror/addon/edit/matchtags'
 // 引入主题 可以从 codemirror/theme/ 下引入多个
 import 'codemirror/theme/idea.css'
 import { ElMessage } from 'element-plus'
-
+import { useAiChatStore } from '@/stores'
+import { storeToRefs } from 'pinia'
+const aiChatStore=useAiChatStore()
+const {iframeEntrance} =storeToRefs(aiChatStore)
 const props = defineProps({
   page: {
     type: Object,
@@ -92,7 +95,8 @@ const saveCode = async () => {
 
 onMounted(() => {
   // 初始化编辑器内容，并格式化
-  const initialContent = formatCode(props.page?.htmlContent || '')
+
+  const initialContent = formatCode(props.page?.htmlContent)
 
   editorInstance = CodeMirror(editor.value, {
     value: initialContent,

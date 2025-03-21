@@ -1,7 +1,8 @@
 <template>
   <div class="element-tree" @click="clearSelection">
-    <div class="element-tree-header" @click.stop @click="showContextMenu = false">
+    <div class="element-tree-header" style="position: relative;" @click.stop @click="showContextMenu = false">
       <h3>节点树</h3>
+      <refreshIcon @click="refreshComponent" style="color:rgb(219,94,181);position:absolute;right:5%;top:50%;transform: translateY(-50%);"></refreshIcon>
     </div>
     <div class="tree-container" @click.stop>
       <div v-if="elementTree.length > 0" class="tree-root">
@@ -45,7 +46,9 @@
 import { ref, onMounted, defineComponent, h, type VNode, onBeforeUnmount, watch } from 'vue';
 import { useAiChatStore } from '@/stores/aiChat';
 import { storeToRefs } from 'pinia';
-
+import Sortable from 'sortablejs'
+import{RefreshCcw as refreshIcon
+} from 'lucide-vue-next';
 // 定义树节点类型
 interface TreeNodeType {
   id: string;
@@ -584,7 +587,16 @@ const copyNode = (): Promise<void> => {
 
     // 克隆DOM元素
     const clonedElement = originalElement.cloneNode(true) as Element;
+    new Sortable(clonedElement, {
+      animation: 150,
+      draggable: '*',
+      group: {
+        name: `.`,
+        put: ['component'], // 允许接收组件库和自身的元素
+      },
+      fallbackOnBody: true,
 
+  })
     // 将克隆的元素插入到原始元素之后
     if (originalElement.parentNode) {
       originalElement.parentNode.insertBefore(clonedElement, originalElement.nextSibling);
